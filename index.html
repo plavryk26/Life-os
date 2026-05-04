@@ -9,13 +9,15 @@
   <meta name="theme-color" content="#000000" />
   <meta name="description" content="LifeOS — fitness, habits & health tracker" />
   <title>LifeOS</title>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin />
+  <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin />
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap&font-display=swap" rel="stylesheet" />
   <style>
     :root {
       --pink:#FF375F; --lime:#30D158; --cyan:#0A84FF; --orange:#FF9F0A; --purple:#BF5AF2;
@@ -308,7 +310,8 @@
   </style>
 </head>
 <body>
-<div id="root"></div>
+<!-- Splash screen shown instantly while JS loads -->
+<div id="root"><div style="position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif"><div style="font-size:32px;font-weight:800;color:#fff;letter-spacing:-.5px">LifeOS</div><div style="width:40px;height:40px;border:3px solid rgba(255,255,255,.15);border-top-color:#0A84FF;border-radius:50%;animation:spin .7s linear infinite"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style></div></div>
 <script type="text/babel">
 // @ts-nocheck
 const { useState, useEffect, useCallback, useRef, useMemo, createContext, useContext } = React;
@@ -343,7 +346,9 @@ function setStorage(key, val) {
 function getAllLogs() { return getStorage(LOGS_KEY, {}); }
 function saveLog(date, d) { const all = getAllLogs(); all[date] = d; setStorage(LOGS_KEY, all); }
 function isoDate(d) { return d.toISOString().split('T')[0]; }
-const TODAY = isoDate(new Date());
+// TODAY is computed fresh on each call to avoid stale date after midnight
+function getToday() { return isoDate(new Date()); }
+const TODAY = getToday();
 
 function makeEmptyDay(date) {
   return {
@@ -1397,7 +1402,8 @@ function PhotoDiaryCard({ photoUrl, userId, selectedDate, onUpload }) {
   );
 }
 
-function BarcodeScanner({ onResult, onClose }) {
+// BarcodeScanner uses a `scanKey` prop so the parent can force-remount on retry
+function BarcodeScannerInner({ onResult, onClose }) {
   const t = useT();
   const videoRef=useRef(null),streamRef=useRef(null),activeRef=useRef(true);
   const [status,setStatus]=useState(t('scan_init'));
@@ -1406,6 +1412,7 @@ function BarcodeScanner({ onResult, onClose }) {
   const timeoutRef=useRef(null);
   const stopCamera=()=>{if(streamRef.current){streamRef.current.getTracks().forEach(tk=>tk.stop());streamRef.current=null;}};
   useEffect(()=>{
+    activeRef.current=true;
     if(!('BarcodeDetector' in window)){setSupported(false);setStatus(t('scan_no_support'));return;}
     (async()=>{
       try{
@@ -1428,36 +1435,44 @@ function BarcodeScanner({ onResult, onClose }) {
     return()=>{activeRef.current=false;clearTimeout(timeoutRef.current);stopCamera();};
   },[]);
   const handleClose=()=>{activeRef.current=false;stopCamera();onClose();};
-  if(timedOut)return(
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&handleClose()}>
-      <div className="modal-sheet">
-        <div className="modal-handle"/>
-        <div style={{textAlign:'center',marginBottom:20}}>
-          <div style={{fontSize:48,marginBottom:12}}>{t('scan_timeout')}</div>
-          <div style={{fontSize:18,fontWeight:700,marginBottom:8}}>{t('scan_not_found')}</div>
-          <div style={{fontSize:14,color:'var(--text3)',lineHeight:1.5}}>{t('scan_manually')}</div>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button className="btn btn-secondary" style={{flex:1}} onClick={handleClose}>{t('scan_manual_btn')}</button>
-          <button className="btn btn-primary" style={{flex:1}} onClick={()=>{setTimedOut(false);setStatus(t('scan_init'));activeRef.current=true;}}>{t('scan_retry')}</button>
-        </div>
-      </div>
-    </div>
-  );
   return(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&handleClose()}>
-      <div className="modal-sheet" style={{padding:0,overflow:'hidden'}}>
-        <div style={{position:'relative',background:'#000',width:'100%',minHeight:280,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          {supported?<><video ref={videoRef} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} playsInline muted/><div style={{position:'relative',zIndex:2}}><div className="scanner-frame"><div className="scanner-line"/></div></div></>:<div style={{color:'#fff',textAlign:'center',padding:28,fontSize:15}}>{status}</div>}
+      {timedOut ? (
+        <div className="modal-sheet">
+          <div className="modal-handle"/>
+          <div style={{textAlign:'center',marginBottom:20}}>
+            <div style={{fontSize:48,marginBottom:12}}>{t('scan_timeout')}</div>
+            <div style={{fontSize:18,fontWeight:700,marginBottom:8}}>{t('scan_not_found')}</div>
+            <div style={{fontSize:14,color:'var(--text3)',lineHeight:1.5}}>{t('scan_manually')}</div>
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            <button className="btn btn-secondary" style={{flex:1}} onClick={handleClose}>{t('scan_manual_btn')}</button>
+            <button className="btn btn-primary" style={{flex:1}} onClick={()=>onClose('retry')}>{t('scan_retry')}</button>
+          </div>
         </div>
-        <div style={{padding:'10px 20px 0',background:'var(--surface)'}}><div className="scanner-timeout-bar"/></div>
-        <div style={{padding:'12px 20px calc(20px + env(safe-area-inset-bottom,0px))',background:'var(--surface)'}}>
-          {supported&&<div style={{textAlign:'center',fontSize:14,color:'var(--text3)',marginBottom:14}}>{status}</div>}
-          <button className="btn btn-secondary btn-full" onClick={handleClose}>{t('scan_cancel')}</button>
+      ) : (
+        <div className="modal-sheet" style={{padding:0,overflow:'hidden'}}>
+          <div style={{position:'relative',background:'#000',width:'100%',minHeight:280,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            {supported?<><video ref={videoRef} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} playsInline muted/><div style={{position:'relative',zIndex:2}}><div className="scanner-frame"><div className="scanner-line"/></div></div></>:<div style={{color:'#fff',textAlign:'center',padding:28,fontSize:15}}>{status}</div>}
+          </div>
+          <div style={{padding:'10px 20px 0',background:'var(--surface)'}}><div className="scanner-timeout-bar"/></div>
+          <div style={{padding:'12px 20px calc(20px + env(safe-area-inset-bottom,0px))',background:'var(--surface)'}}>
+            {supported&&<div style={{textAlign:'center',fontSize:14,color:'var(--text3)',marginBottom:14}}>{status}</div>}
+            <button className="btn btn-secondary btn-full" onClick={handleClose}>{t('scan_cancel')}</button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
+}
+// Wrapper that re-mounts the scanner on retry by bumping scanKey
+function BarcodeScanner({ onResult, onClose }) {
+  const [scanKey, setScanKey] = useState(0);
+  const handleClose = (reason) => {
+    if (reason === 'retry') { setScanKey(k => k + 1); }
+    else { onClose(); }
+  };
+  return <BarcodeScannerInner key={scanKey} onResult={onResult} onClose={handleClose} />;
 }
 
 // ─── Settings Screen ──────────────────────────────────────────────
@@ -2272,19 +2287,11 @@ function WorkoutScreen({ state, update, logs, onXP }) {
 }
 
 // ─── Screen 6: Recovery ──────────────────────────────────────────
-function RecoveryScreen({ state, update }) {
+// recoveryTemplates is now passed as a prop from App (via profileSnap) — no polling needed
+function RecoveryScreen({ state, update, recoveryTemplates: propTemplates }) {
   const t = useT();
-  // Reactive: re-read profile whenever localStorage changes (e.g. after editing in ProfileModal)
-  const [profileTemplates, setProfileTemplates] = useState(() => getProfile().recoveryTemplates || []);
-  useEffect(() => {
-    const onStorage = () => setProfileTemplates(getProfile().recoveryTemplates || []);
-    window.addEventListener('storage', onStorage);
-    // Also refresh on mount and when ProfileModal closes (profile key updated)
-    const interval = setInterval(() => setProfileTemplates(getProfile().recoveryTemplates || []), 1000);
-    return () => { window.removeEventListener('storage', onStorage); clearInterval(interval); };
-  }, []);
-  const templates = profileTemplates.length > 0
-    ? profileTemplates
+  const templates = (propTemplates && propTemplates.length > 0)
+    ? propTemplates
     : [{id:'sauna',name:'Сауна',emoji:'🔥'},{id:'massage',name:'Массаж',emoji:'💆'},{id:'pressotherapy',name:'Прессотерапия',emoji:'🦵'}];
   const recoveryItems = state.recoveryItems || {};
   const recovery = state.recovery || { notes: '' };
@@ -2795,14 +2802,19 @@ function App({ userId, initialData, onLogout }) {
     debouncedSave(userId, 'settings', newSettings); // cloud
   }, []);
 
-  const SCREENS = {
-    sleep:     <SleepScreen      state={data} update={update}/>,
-    activity:  <ActivityScreen   state={data} update={update}/>,
-    supps:     <SupplementsScreen state={data} update={update}/>,
-    nutrition: <NutritionScreen  state={data} update={update} showToast={showToast} onXP={grantXP}/>,
-    workout:   <WorkoutScreen    state={data} update={update} logs={logs}          onXP={grantXP}/>,
-    recovery:  <RecoveryScreen   state={data} update={update}/>,
-  };
+  // Memoised per-screen renders — only the active tab re-renders on data change
+  const activeScreen = useMemo(() => {
+    const recoveryTemplates = profileSnap.recoveryTemplates || [];
+    switch(activeTab) {
+      case 'sleep':     return <SleepScreen      state={data} update={update}/>;
+      case 'activity':  return <ActivityScreen   state={data} update={update}/>;
+      case 'supps':     return <SupplementsScreen state={data} update={update}/>;
+      case 'nutrition': return <NutritionScreen  state={data} update={update} showToast={showToast} onXP={grantXP}/>;
+      case 'workout':   return <WorkoutScreen    state={data} update={update} logs={logs}          onXP={grantXP}/>;
+      case 'recovery':  return <RecoveryScreen   state={data} update={update} recoveryTemplates={recoveryTemplates}/>;
+      default:          return null;
+    }
+  }, [activeTab, data, logs, showToast, grantXP, update, profileSnap.recoveryTemplates]);
 
   const { handleExport, exporting } = useExportLog(data, showToast);
 
@@ -2823,7 +2835,7 @@ function App({ userId, initialData, onLogout }) {
         />
       </>}
       <div className="screen">
-        {SCREENS[activeTab]}
+        {activeScreen}
       </div>
       <BottomNav active={activeTab} onChange={setActiveTab} visibleTabs={settings.visibleTabs || {}}/>
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
