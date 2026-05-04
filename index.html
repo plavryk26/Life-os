@@ -1181,8 +1181,27 @@ function AuthGate() {
   };
 
   useEffect(() => {
+    // Safety net: if Supabase doesn't respond within 6s, fall back to localStorage
+    const fallbackTimer = setTimeout(() => {
+      setLoading(prev => {
+        if (prev) { // only if still loading
+          console.warn('[AuthGate] Supabase timeout — falling back to localStorage');
+          setInitialData({
+            logs:         getAllLogs(),
+            profile:      getProfile(),
+            settings:     getSettings(),
+            habits:       getHabits(),
+            achievements: getAchievements(),
+          });
+          setLoading(false);
+        }
+        return false;
+      });
+    }, 6000);
+
     const { data: { subscription } } = window.supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
+        clearTimeout(fallbackTimer);
         if (session?.user) {
           setUser(session.user);
           await loadUserData(session.user.id);
@@ -1191,7 +1210,7 @@ function AuthGate() {
         }
       }
     );
-    return () => subscription.unsubscribe();
+    return () => { clearTimeout(fallbackTimer); subscription.unsubscribe(); };
   }, []);
 
   const handleLogout = async () => {
