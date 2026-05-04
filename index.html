@@ -1,0 +1,2858 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="LifeOS" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="LifeOS — fitness, habits & health tracker" />
+  <title>LifeOS</title>
+  <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin />
+  <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin />
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap&font-display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pink:#FF375F; --lime:#30D158; --cyan:#0A84FF; --orange:#FF9F0A; --purple:#BF5AF2;
+      --red:#FF453A; --green:#30D158;
+      --bg:#F2F2F7; --surface:#FFF; --surface2:#F2F2F7; --surface3:#E5E5EA;
+      --text:#000; --text2:#3C3C43; --text3:#8E8E93;
+      --sep:rgba(60,60,67,.12); --card-shadow:0 2px 12px rgba(0,0,0,.08);
+      --toggle-bg:#E5E5EA; --nav-bg:rgba(242,242,247,.9); --header-bg:rgba(242,242,247,.9);
+    }
+    @media(prefers-color-scheme:dark){
+      :root{
+        /* Background layers — true iOS dark */
+        --bg:#000000; --surface:#1C1C1E; --surface2:#2C2C2E; --surface3:#3A3A3C;
+        /* Text hierarchy — Apple HIG */
+        --text:#FFFFFF; --text2:rgba(255,255,255,.80); --text3:#8E8E93;
+        /* Structural */
+        --sep:rgba(255,255,255,.1); --card-shadow:0 1px 0 rgba(255,255,255,.05);
+        --toggle-bg:#3A3A3C; --nav-bg:rgba(28,28,30,.94); --header-bg:rgba(28,28,30,.94);
+        /* iOS system accent colors — replacing neon */
+        --cyan:#0A84FF;   /* iOS Blue */
+        --lime:#30D158;   /* iOS Green */
+        --pink:#FF375F;   /* iOS Red/Pink */
+        --purple:#BF5AF2; /* iOS Purple */
+        --orange:#FF9F0A; /* iOS Orange */
+        --teal:#5AC8FA;   /* iOS Teal */
+      }
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    html,body,#root{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none;}
+    #root{display:flex;flex-direction:column;min-height:-webkit-fill-available;}
+    ::-webkit-scrollbar{width:0;height:0;}
+    button,a,select,input,textarea{touch-action:manipulation;}
+
+    .card{background:var(--surface);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);}
+    .card-sm{border-radius:14px;padding:12px 14px;}
+    .input{background:var(--surface2);border:1.5px solid var(--sep);border-radius:12px;padding:11px 14px;font-size:16px;font-family:inherit;color:var(--text);width:100%;outline:none;transition:border-color .2s;}
+    .input:focus{border-color:var(--cyan);}
+    .input::placeholder{color:var(--text3);}
+    textarea.input{resize:none;min-height:100px;}
+    .label{font-size:13px;font-weight:600;color:var(--text3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px;}
+    .section-title{font-size:22px;font-weight:700;letter-spacing:-.5px;}
+    .pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:12px;font-weight:600;}
+
+    .toggle-wrap{position:relative;width:51px;height:31px;flex-shrink:0;}
+    .toggle-wrap input{opacity:0;width:0;height:0;position:absolute;}
+    .toggle-track{position:absolute;inset:0;background:var(--toggle-bg);border-radius:100px;transition:background .25s;cursor:pointer;}
+    .toggle-wrap input:checked+.toggle-track{background:#34C759;}
+    .toggle-thumb{position:absolute;top:2px;left:2px;width:27px;height:27px;background:#fff;border-radius:50%;transition:transform .25s;box-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none;}
+    .toggle-wrap input:checked~.toggle-thumb{transform:translateX(20px);}
+
+    .progress-bar-bg{height:8px;background:var(--surface2);border-radius:100px;overflow:hidden;}
+    .progress-bar-fill{height:100%;border-radius:100px;transition:width .5s ease;}
+
+    .app-header{background:var(--header-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--sep);padding:12px 16px 10px;padding-top:calc(12px + env(safe-area-inset-top,0px));flex-shrink:0;z-index:50;}
+    .header-row{display:flex;align-items:center;justify-content:space-between;}
+    .app-logo{font-size:18px;font-weight:700;letter-spacing:-.5px;color:var(--text);}
+    .bottom-nav{background:var(--nav-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--sep);display:flex;align-items:stretch;padding-bottom:env(safe-area-inset-bottom,4px);flex-shrink:0;z-index:100;}
+    .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 4px 5px;cursor:pointer;user-select:none;-webkit-user-select:none;transition:transform .12s;gap:3px;-webkit-tap-highlight-color:transparent;}
+    .nav-item:active{transform:scale(.88);}
+    .nav-icon{display:flex;align-items:center;justify-content:center;width:36px;height:28px;border-radius:10px;transition:background .2s;}
+    .nav-item.active .nav-icon{background:rgba(0,229,255,.12);}
+    .nav-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1px;transition:color .2s;}
+    .nav-item.active .nav-label{color:var(--cyan);}
+    .nav-dot{width:4px;height:4px;border-radius:50%;background:transparent;transition:background .2s;margin-top:1px;}
+    .nav-item.active .nav-dot{background:var(--cyan);}
+
+    .date-nav{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--header-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--sep);flex-shrink:0;z-index:49;}
+    .date-arrow{width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--sep);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text);flex-shrink:0;user-select:none;-webkit-user-select:none;transition:background .15s;}
+    .date-arrow:active{background:var(--sep);}
+    .date-ribbon{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex:1;padding:2px 0;}
+    .date-chip{display:flex;flex-direction:column;align-items:center;padding:6px 10px;border-radius:12px;cursor:pointer;flex-shrink:0;transition:background .15s,transform .1s;user-select:none;-webkit-user-select:none;min-width:44px;}
+    .date-chip:active{transform:scale(.93);}
+    .date-chip.active{background:var(--cyan);}
+    .date-chip .dc-day{font-size:11px;font-weight:600;color:var(--text3);}
+    .date-chip .dc-num{font-size:17px;font-weight:700;color:var(--text);}
+    .date-chip.active .dc-day,.date-chip.active .dc-num{color:#000;}
+    .date-chip.has-data .dc-dot{width:5px;height:5px;border-radius:50%;background:var(--lime);margin-top:2px;}
+
+    .rings-widget{padding:7px 16px;background:var(--header-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--sep);display:flex;justify-content:space-around;align-items:center;flex-shrink:0;}
+    .ring-item{display:flex;flex-direction:column;align-items:center;gap:2px;}
+
+    .screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+    .screen-content{padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;max-width:480px;margin:0 auto;}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:14px;font-size:15px;font-weight:600;font-family:inherit;border:none;cursor:pointer;user-select:none;-webkit-user-select:none;transition:transform .1s,opacity .1s;}
+    .btn:active{transform:scale(.96);opacity:.85;}
+    .btn-primary{background:var(--cyan);color:#000;}
+    .btn-secondary{background:var(--surface2);color:var(--text);border:1.5px solid var(--sep);}
+    .btn-danger{background:rgba(255,59,48,.12);color:#FF3B30;}
+    .btn-full{width:100%;}
+    .btn-sm{padding:8px 14px;font-size:13px;border-radius:10px;}
+
+    .stat-card{background:var(--surface);border-radius:18px;padding:16px;box-shadow:var(--card-shadow);display:flex;flex-direction:column;gap:4px;}
+    .stat-val{font-size:28px;font-weight:700;letter-spacing:-1px;line-height:1;}
+    .stat-unit{font-size:13px;color:var(--text3);font-weight:500;margin-top:2px;}
+
+    .stars{display:flex;gap:6px;}
+    .star{font-size:28px;cursor:pointer;transition:transform .15s;user-select:none;-webkit-user-select:none;}
+    .star:active{transform:scale(1.3);}
+
+    .slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:100px;outline:none;cursor:pointer;}
+    .slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;}
+
+    .supp-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--sep);}
+    .supp-item:last-child{border-bottom:none;}
+    .supp-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--sep);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;}
+    .supp-check.checked{background:#34C759;border-color:#34C759;}
+
+    .meal-row{display:flex;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--sep);}
+    .meal-row:last-child{border-bottom:none;}
+    .macro-chip{background:var(--surface2);border-radius:8px;padding:3px 7px;font-size:11px;font-weight:600;color:var(--text3);}
+
+    .set-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--sep);}
+    .set-row:last-child{border-bottom:none;}
+
+    .recovery-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--surface);border-radius:16px;box-shadow:var(--card-shadow);}
+
+    .stepper{display:flex;align-items:center;gap:12px;}
+    .stepper-btn{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--sep);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;color:var(--text);flex-shrink:0;transition:background .15s;}
+    .stepper-btn:active{background:var(--sep);}
+    .stepper-val{font-size:22px;font-weight:700;min-width:50px;text-align:center;}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;animation:fadeIn .2s ease;}
+    .modal-sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;margin:0 auto;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));animation:slideUp .3s ease;max-height:92vh;overflow-y:auto;}
+    .modal-handle{width:36px;height:4px;background:var(--text3);border-radius:100px;margin:0 auto 20px;opacity:.3;}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .fade-up{animation:fadeUp .35s ease both;}
+
+    .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:12px 24px;border-radius:100px;font-size:14px;font-weight:500;z-index:9999;backdrop-filter:blur(10px);animation:toastIn .3s ease,toastOut .3s ease 1.7s forwards;white-space:nowrap;max-width:calc(100vw - 40px);text-align:center;}
+    @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    @keyframes toastOut{from{opacity:1}to{opacity:0}}
+
+    .export-btn{background:linear-gradient(135deg,#FF375F 0%,#BF5AF2 50%,#0A84FF 100%);color:#fff;font-size:16px;font-weight:700;padding:18px 24px;border-radius:18px;border:none;width:100%;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(0,0,0,.3);transition:transform .15s,box-shadow .15s;font-family:inherit;letter-spacing:-.3px;user-select:none;-webkit-user-select:none;}
+    .export-btn:active{transform:scale(.97);}
+    .ai-btn{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,rgba(255,45,120,.15),rgba(0,229,255,.15));border:1.5px solid rgba(0,229,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform .12s,background .15s;margin-left:6px;}
+    .ai-btn:active{transform:scale(.88);background:linear-gradient(135deg,rgba(255,45,120,.28),rgba(0,229,255,.25));}
+    .ai-btn:disabled{opacity:.5;cursor:default;}
+
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+    .avatar-btn{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#FF375F,#BF5AF2);display:flex;align-items:center;justify-content:center;font-size:18px;border:none;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .15s;overflow:hidden;}
+    .avatar-btn:active{transform:scale(.87);}
+    .profile-screen{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;animation:slideInRight .32s cubic-bezier(.32,.72,0,1);}
+    @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
+    .profile-header{background:var(--header-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--sep);padding:14px 20px 12px;padding-top:calc(14px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:14px;flex-shrink:0;}
+    .inbody-card{background:linear-gradient(135deg,rgba(0,229,255,.05),rgba(191,90,242,.05));border:1.5px solid rgba(0,229,255,.2);border-radius:18px;padding:16px;}
+    .inbody-input-wrap{position:relative;display:flex;align-items:center;}
+    .inbody-input{font-size:32px!important;font-weight:700!important;text-align:center!important;height:68px!important;letter-spacing:-1px;padding-right:52px!important;}
+    .inbody-unit{position:absolute;right:14px;font-size:16px;font-weight:700;color:var(--text3);pointer-events:none;}
+    .inbody-stat{flex:1;text-align:center;border-radius:14px;padding:12px 6px;}
+    .scan-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:14px;border:1.5px solid var(--cyan);background:rgba(0,229,255,.08);color:var(--cyan);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;width:100%;transition:background .15s,transform .1s;}
+    .scan-btn:active{background:rgba(0,229,255,.2);transform:scale(.97);}
+    .scan-btn:disabled{opacity:.5;}
+    .select-input{background:var(--surface2);border:1.5px solid var(--sep);border-radius:12px;padding:11px 14px;font-size:16px;font-family:inherit;color:var(--text);width:100%;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%238E8E93' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;}
+    .select-input:focus{border-color:var(--cyan);}
+    .avatar-upload-btn{position:relative;cursor:pointer;flex-shrink:0;}
+    .avatar-upload-btn .edit-badge{position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:var(--cyan);color:#000;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid var(--surface);}
+    .per100-section{background:rgba(168,255,62,.05);border:1.5px solid rgba(168,255,62,.2);border-radius:14px;padding:14px;margin-bottom:12px;}
+    .section-group-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding:0 4px;}
+
+    .scanner-frame{width:240px;height:150px;border:2px solid var(--cyan);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.55);position:relative;pointer-events:none;}
+    .scanner-line{position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanLine 1.8s ease-in-out infinite;top:20%;}
+    @keyframes scanLine{0%{top:15%;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:85%;opacity:0}}
+    .scanner-timeout-bar{height:3px;background:linear-gradient(90deg,var(--cyan),var(--pink));border-radius:100px;animation:shrink 15s linear forwards;}
+    @keyframes shrink{from{width:100%}to{width:0%}}
+    .spinner{width:18px;height:18px;border:2.5px solid rgba(0,229,255,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .tutorial-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .3s ease;}
+    .tutorial-card{background:var(--surface);border-radius:28px;padding:32px 24px 24px;max-width:360px;width:100%;animation:fadeUp .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 24px 60px rgba(0,0,0,.4);}
+    .tutorial-dot{height:6px;border-radius:100px;transition:width .35s ease,background .35s ease;}
+
+    .header-greeting{font-size:12px;color:var(--text3);margin-top:1px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+    .header-greeting strong{color:var(--cyan);}
+    .status-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;flex-shrink:0;}
+
+    .streak-display{font-size:48px;font-weight:900;letter-spacing:-3px;line-height:1;text-align:center;}
+
+    .achievement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+    .badge-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 8px 12px;border-radius:16px;background:var(--surface);box-shadow:var(--card-shadow);position:relative;overflow:hidden;transition:transform .2s;}
+    .badge-card.unlocked{background:linear-gradient(145deg,rgba(0,229,255,.07),rgba(168,255,62,.05));border:1.5px solid rgba(0,229,255,.25);}
+    .badge-card.locked{filter:grayscale(1);opacity:.4;}
+    .badge-emoji{font-size:32px;line-height:1.1;}
+    .badge-name{font-size:11px;font-weight:700;text-align:center;color:var(--text);line-height:1.2;}
+    .badge-desc{font-size:9px;color:var(--text3);text-align:center;line-height:1.35;}
+    .badge-unlocked-tag{font-size:8px;font-weight:800;letter-spacing:.3px;margin-top:2px;}
+    @keyframes badgeUnlock{0%{transform:scale(1)}20%{transform:scale(1.22) rotate(-3deg)}40%{transform:scale(1.28) rotate(3deg)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+    .badge-card.just-unlocked{animation:badgeUnlock .65s cubic-bezier(.34,1.56,.64,1);}
+    .badge-card.unlocked{background:var(--surface);border:1.5px solid rgba(168,255,62,.3);}
+
+    .sparkline-svg{overflow:visible;display:block;}
+    .status-banner{border-radius:18px;padding:16px;display:flex;align-items:center;gap:16px;box-shadow:var(--card-shadow);}
+
+    @keyframes goalsFlash{0%{opacity:0;transform:translateY(-8px) scale(.97)}10%{opacity:1;transform:translateY(0) scale(1)}78%{opacity:1}100%{opacity:0;transform:translateY(-4px)}}
+    .goals-updated-banner{background:rgba(168,255,62,.12);border:1.5px solid rgba(168,255,62,.4);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--lime);animation:goalsFlash 2.8s ease forwards;}
+    .metabolism-card{background:rgba(168,255,62,.05);border:1.5px solid rgba(168,255,62,.18);border-radius:14px;padding:14px;margin-top:14px;}
+
+    .profile-tab-bar{display:flex;gap:4px;padding:10px 12px 0;background:var(--header-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--sep);flex-shrink:0;overflow-x:auto;}
+    .profile-tab{flex:1;min-width:64px;padding:8px 6px 10px;border-radius:12px 12px 0 0;font-size:12px;font-weight:600;text-align:center;cursor:pointer;color:var(--text3);background:transparent;border:none;font-family:inherit;transition:color .15s,background .15s;white-space:nowrap;min-height:44px;display:flex;align-items:center;justify-content:center;gap:3px;}
+    .profile-tab.active{color:var(--cyan);background:var(--surface2);}
+    .profile-tab:active{opacity:.7;}
+
+    /* Settings */
+    .lang-option{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:14px;border:1.5px solid var(--sep);background:var(--surface2);cursor:pointer;transition:border-color .2s,background .2s;font-family:inherit;width:100%;}
+    .lang-option.active{border-color:var(--cyan);background:rgba(0,229,255,.08);}
+    .lang-flag{font-size:24px;flex-shrink:0;}
+    .lang-name{font-size:16px;font-weight:600;flex:1;text-align:left;color:var(--text);}
+    .lang-check{color:var(--cyan);font-size:18px;font-weight:700;}
+    .tab-visibility-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--sep);}
+    .tab-visibility-row:last-child{border-bottom:none;}
+
+    /* ── Exercise Autocomplete ── */
+    .exercise-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border:1.5px solid var(--sep);border-radius:14px;overflow:hidden;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,.22);max-height:200px;overflow-y:auto;}
+    .ex-sug-item{padding:11px 16px;font-size:15px;font-weight:500;color:var(--text);cursor:pointer;border-bottom:1px solid var(--sep);transition:background .12s;display:flex;align-items:center;gap:10px;user-select:none;-webkit-user-select:none;}
+    .ex-sug-item:last-child{border-bottom:none;}
+    .ex-sug-item:hover,.ex-sug-item:active{background:rgba(0,229,255,.1);}
+    .ex-sug-item mark{background:none;color:var(--cyan);font-weight:700;}
+    .ex-sug-label{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.4px;text-transform:uppercase;padding:8px 16px 4px;border-bottom:1px solid var(--sep);}
+
+    /* ── Auth Screen ── */
+    .auth-root{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;z-index:9000;}
+    .auth-card{width:100%;max-width:380px;background:var(--surface);border:1.5px solid var(--sep);border-radius:24px;padding:32px 28px;box-shadow:0 8px 40px rgba(0,0,0,.22);}
+    .auth-logo{font-size:26px;font-weight:700;letter-spacing:-.5px;text-align:center;margin-bottom:4px;color:var(--text);}
+    .auth-subtitle{font-size:11px;color:var(--text3);text-align:center;margin-bottom:32px;letter-spacing:1.5px;text-transform:uppercase;}
+    .auth-input{width:100%;background:var(--surface2);border:1.5px solid var(--sep);border-radius:14px;padding:14px 16px;font-size:16px;color:var(--text);font-family:inherit;outline:none;box-sizing:border-box;transition:border-color .2s;-webkit-appearance:none;appearance:none;display:block;}
+    .auth-input:focus{border-color:var(--cyan);}
+    .auth-btn{width:100%;background:var(--cyan);border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:700;color:#000;cursor:pointer;font-family:inherit;margin-top:8px;letter-spacing:.2px;transition:opacity .2s;display:block;}
+    .auth-btn:active{opacity:.85;} .auth-btn:disabled{opacity:.5;cursor:default;}
+    .auth-toggle{text-align:center;margin-top:20px;font-size:14px;color:var(--text3);}
+    .auth-toggle span{color:var(--cyan);font-weight:600;cursor:pointer;}
+    .auth-error{background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.3);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:16px;line-height:1.5;}
+    .auth-loading{text-align:center;color:var(--text3);font-size:14px;padding:40px 0;}
+    .logout-btn{width:100%;background:rgba(255,69,58,.08);border:1.5px solid rgba(255,69,58,.25);border-radius:14px;padding:13px;font-size:15px;font-weight:600;color:var(--red);cursor:pointer;font-family:inherit;transition:background .2s;}
+    .logout-btn:active{background:rgba(255,69,58,.18);}
+    /* ─── XP System ───────────────────────────────────────────────── */
+    .xp-widget{display:flex;align-items:center;gap:8px;padding:7px 14px;background:var(--header-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--sep);flex-shrink:0;}
+    .xp-level-badge{background:linear-gradient(135deg,rgba(0,229,255,.18),rgba(168,255,62,.15));border:1.5px solid rgba(0,229,255,.35);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:800;color:var(--cyan);letter-spacing:.5px;white-space:nowrap;flex-shrink:0;}
+    .xp-rank{font-size:10px;font-weight:600;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;flex-shrink:0;}
+    .xp-bar-track{flex:1;height:5px;background:var(--surface2);border-radius:100px;overflow:hidden;min-width:0;}
+    .xp-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--cyan),var(--lime));transition:width .6s cubic-bezier(.4,0,.2,1);}
+    .xp-nums{font-size:10px;color:var(--text3);font-weight:600;white-space:nowrap;flex-shrink:0;}
+    .cyber-stats-card{background:linear-gradient(135deg,rgba(0,229,255,.07),rgba(168,255,62,.04));border:1.5px solid rgba(0,229,255,.22);border-radius:16px;padding:16px;margin-bottom:12px;}
+    .cyber-rank-title{font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;}
+    .cyber-stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--sep);}
+    .cyber-stat-row:last-child{border-bottom:none;padding-bottom:0;}
+    .xp-next-bar-track{flex:1;height:4px;background:var(--surface2);border-radius:100px;overflow:hidden;}
+    .xp-next-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--cyan),var(--lime));}
+    @keyframes xp-pop{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-32px) scale(1.1);opacity:0}}
+    .xp-floater{position:fixed;left:50%;transform:translateX(-50%);top:80px;z-index:9999;font-size:15px;font-weight:800;color:var(--lime);pointer-events:none;animation:xp-pop 1.4s ease-out forwards;}
+    /* ─── Photo Diary ───────────────────────────────────────────────── */
+    .photo-diary-card{margin:0 14px 8px;padding:10px 14px;background:var(--surface);border:1px solid var(--sep);border-radius:16px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
+    .photo-diary-header{display:flex;align-items:center;justify-content:space-between;}
+    .photo-diary-title{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.6px;}
+    .photo-diary-img-wrap{position:relative;border-radius:12px;overflow:hidden;line-height:0;}
+    .photo-diary-img{width:100%;height:200px;object-fit:cover;border-radius:12px;display:block;transition:opacity .3s;}
+    .photo-diary-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 50%);border-radius:12px;}
+    .photo-diary-actions{position:absolute;bottom:8px;left:0;right:0;display:flex;gap:6px;padding:0 8px;justify-content:flex-end;}
+    .photo-action-btn{background:rgba(0,0,0,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit;transition:background .2s;white-space:nowrap;}
+    .photo-action-btn:active{background:rgba(255,255,255,.12);}
+    .photo-delete-btn{background:rgba(255,69,58,.55);border-color:rgba(255,69,58,.4);padding:6px 10px;}
+    .photo-delete-btn:active{background:rgba(255,69,58,.75);}
+    .photo-upload-btn{width:100%;background:linear-gradient(135deg,rgba(0,229,255,.08),rgba(168,255,62,.05));border:1.5px dashed rgba(0,229,255,.35);border-radius:12px;color:var(--cyan);font-size:14px;font-weight:600;padding:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;transition:background .2s;}
+    .photo-upload-btn:active,.photo-upload-btn:hover{background:rgba(0,229,255,.14);}
+    .photo-upload-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+    /* ── Recovery Constructor ── */
+    .recovery-template-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--sep);}
+    .recovery-template-row:last-child{border-bottom:none;}
+    .recovery-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border-radius:12px;border:1.5px dashed var(--sep);background:transparent;color:var(--text3);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;transition:border-color .2s,color .2s;}
+    .recovery-add-btn:active{border-color:var(--cyan);color:var(--cyan);}
+
+    /* ── Habit Offset Input ── */
+    .habit-offset-input{width:72px!important;text-align:center!important;font-size:20px!important;font-weight:700!important;padding:6px 8px!important;}
+
+    /* ── Achievement Categories ── */
+    .ach-category{margin-bottom:22px;}
+    .ach-cat-title{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+    .ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+    .ach-card{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;border-radius:12px;background:var(--surface2);transition:transform .15s;}
+    .ach-card.unlocked{background:var(--surface);box-shadow:var(--card-shadow);border:1.5px solid var(--sep);}
+    .ach-card.locked{opacity:.32;filter:grayscale(.85);}
+    .ach-card.just-unlocked{animation:badgeUnlock .65s cubic-bezier(.34,1.56,.64,1);}
+    .ach-emoji{font-size:26px;line-height:1.1;}
+    .ach-name{font-size:10px;font-weight:700;text-align:center;color:var(--text);line-height:1.2;}
+    .ach-desc{font-size:9px;color:var(--text3);text-align:center;line-height:1.3;}
+    .ach-tag{font-size:8px;font-weight:800;letter-spacing:.2px;margin-top:1px;}
+  </style>
+</head>
+<body>
+<!-- Splash screen shown instantly while JS loads -->
+<div id="root"><div style="position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif"><div style="font-size:32px;font-weight:800;color:#fff;letter-spacing:-.5px">LifeOS</div><div style="width:40px;height:40px;border:3px solid rgba(255,255,255,.15);border-top-color:#0A84FF;border-radius:50%;animation:spin .7s linear infinite"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style></div></div>
+<script type="text/babel">
+// @ts-nocheck
+const { useState, useEffect, useCallback, useRef, useMemo, createContext, useContext } = React;
+
+// ─── Supabase Client ──────────────────────────────────────────────
+window.supabaseClient = window.supabase.createClient(
+  'https://xjdzneefqadrtxlvpwdo.supabase.co',
+  'sb_publishable_6KCjvwlSfYJ4xFvIJzglVA_BszTCq40'
+);
+
+// ─── Debounce Utility ──────────────────────────────────────────────
+function debounce(fn, ms) {
+  let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+
+// ─── Storage ──────────────────────────────────────────────────────
+const LOGS_KEY         = 'cyborg_logs_v2';
+const PROFILE_KEY      = 'cyborg_profile';
+const TUTORIAL_KEY     = 'cyborg_tutorial_v15';
+const HABITS_KEY       = 'cyborg_habits_v1';
+const ACHIEVEMENTS_KEY = 'cyborg_achievements_v1';
+const SETTINGS_KEY     = 'cyborg_settings_v1';
+
+function getStorage(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function setStorage(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+function getAllLogs() { return getStorage(LOGS_KEY, {}); }
+function saveLog(date, d) { const all = getAllLogs(); all[date] = d; setStorage(LOGS_KEY, all); }
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+// TODAY is computed fresh on each call to avoid stale date after midnight
+function getToday() { return isoDate(new Date()); }
+const TODAY = getToday();
+
+function makeEmptyDay(date) {
+  return {
+    date,
+    sleep: { hours: 7, quality: 4 },
+    energy: 7,
+    activity: { activeKcal: '', avgHR: '' },
+    weight: '',
+    supplements: {
+      morning: [
+        { id: 1, name: 'Витамин D3', dose: '5000 МЕ', checked: false },
+        { id: 2, name: 'Омега-3', dose: '2г', checked: false },
+        { id: 3, name: 'Магний', dose: '400мг', checked: false },
+      ],
+      day: [
+        { id: 4, name: 'Коллаген', dose: '10г', checked: false },
+        { id: 5, name: 'Цинк', dose: '15мг', checked: false },
+      ],
+      evening: [
+        { id: 6, name: 'ZMA', dose: '3 капсулы', checked: false },
+        { id: 7, name: 'Мелатонин', dose: '0.5мг', checked: false },
+      ],
+    },
+    nutrition: { meals: [], waterMl: 0 },
+    workout: {
+      cardio: { machine: '', angle: '', speed: '', duration: '', distance: '' },
+      exercises: [],
+    },
+    recovery: { notes: '' },
+    recoveryItems: {},
+  };
+}
+
+function getLogForDate(date) { const all = getAllLogs(); return all[date] || makeEmptyDay(date); }
+
+function getProfile() {
+  return getStorage(PROFILE_KEY, {
+    name: '', age: '', height: '', weight: '',
+    goal: '', activityLevel: '',
+    goalKcal: '500', goalWaterL: '3', goalCalories: '2000',
+    avatar: '',
+    inbody: { muscleMass: '', bodyFat: '', totalWater: '' },
+    xp: 0, level: 1,
+    recoveryTemplates: [
+      { id: 'sauna',         name: 'Сауна',         emoji: '🔥' },
+      { id: 'massage',       name: 'Массаж',         emoji: '💆' },
+      { id: 'pressotherapy', name: 'Прессотерапия',  emoji: '🦵' },
+    ],
+  });
+}
+
+function getSettings() {
+  return getStorage(SETTINGS_KEY, {
+    lang: 'ru',
+    visibleTabs: { sleep: true, activity: true, supps: true, nutrition: true, workout: true, recovery: true },
+  });
+}
+function saveSettings(s) { setStorage(SETTINGS_KEY, s); }
+
+// ─── Auto-Goals ───────────────────────────────────────────────────
+function calcAutoGoals(weight, bodyFatPct, goal) {
+  const w = parseFloat(weight), bf = parseFloat(bodyFatPct);
+  if (!w || !bf || isNaN(w) || isNaN(bf) || bf <= 0 || bf >= 100) return null;
+  const lbm  = w * (1 - bf / 100);
+  const bmr  = Math.round(370 + 21.6 * lbm);
+  const tdee = Math.round(bmr * 1.2);
+  let targetKcal = tdee;
+  if (goal === 'Сушка' || goal === 'Cut' || goal === 'Definición' || goal === 'Definição') targetKcal = tdee - 500;
+  else if (goal === 'Масса' || goal === 'Bulk' || goal === 'Volumen' || goal === 'Volume') targetKcal = tdee + 300;
+  return {
+    bmr, tdee,
+    goalCalories: String(Math.max(1200, Math.round(targetKcal))),
+    goalWaterL:   (w * 0.035).toFixed(1),
+    goalKcal:     (goal === 'Сушка' || goal === 'Cut' || goal === 'Definición' || goal === 'Definição') ? '1000' : '500',
+    lbm:          Math.round(lbm * 10) / 10,
+  };
+}
+
+// ─── Habits ───────────────────────────────────────────────────────
+function getHabits() {
+  return getStorage(HABITS_KEY, {
+    noSmoking: { active: false, startDate: null, streakDays: 0, offset: 0 },
+    noAlcohol:  { active: false, startDate: null, streakDays: 0, offset: 0 },
+    noSugar:    { active: false, startDate: null, streakDays: 0, offset: 0 },
+    noCoffee:   { active: false, startDate: null, streakDays: 0, offset: 0 },
+  });
+}
+function saveHabits(h) { setStorage(HABITS_KEY, h); }
+function getAchievements() { return getStorage(ACHIEVEMENTS_KEY, {}); }
+function saveAchievements(a) { setStorage(ACHIEVEMENTS_KEY, a); }
+
+function calcStreakDays(startDate) {
+  if (!startDate) return 0;
+  return Math.max(0, Math.floor((new Date() - new Date(startDate + 'T00:00:00')) / 86400000));
+}
+function totalHabitDays(habit) {
+  if (!habit) return 0;
+  const logged = habit.active ? calcStreakDays(habit.startDate) : (habit.streakDays || 0);
+  return logged + (parseInt(habit.offset, 10) || 0);
+}
+function countAllRingsClosedStreak(logs) {
+  const p = getProfile();
+  const goalKcal  = parseFloat(p.goalKcal)    || 500;
+  const goalWater = parseFloat(p.goalWaterL)   || 3;
+  const goalCal   = parseFloat(p.goalCalories) || 2000;
+  let streak = 0;
+  for (let i = 0; i <= 730; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const log = logs[isoDate(d)];
+    if (!log) break;
+    const activeKcal = parseFloat(log.activity?.activeKcal) || 0;
+    const waterL     = (log.nutrition?.waterMl || 0) / 1000;
+    const totalKcal  = (log.nutrition?.meals || []).reduce((s,m) => s + (+m.kcal||0), 0);
+    if (activeKcal >= goalKcal && waterL >= goalWater && totalKcal >= goalCal) streak++;
+    else break;
+  }
+  return streak;
+}
+function isDayWorkout(dayLog) {
+  if (!dayLog) return false;
+  const w = dayLog.workout; if (!w) return false;
+  return (w.exercises && w.exercises.length > 0) || Object.values(w.cardio || {}).some(v => v && v !== '');
+}
+function countWorkoutDays(logs) { return Object.values(logs).filter(l => isDayWorkout(l)).length; }
+function countWorkoutsThisWeek(logs) {
+  const now = new Date(), dow = now.getDay();
+  const monday = new Date(now); monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1)); monday.setHours(0,0,0,0);
+  return Object.entries(logs).filter(([d, l]) => { const dt = new Date(d + 'T00:00:00'); return dt >= monday && dt <= now && isDayWorkout(l); }).length;
+}
+function countWorkoutsThisMonth(logs) {
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  return Object.entries(logs).filter(([d, l]) => { const dt = new Date(d + 'T00:00:00'); return dt.getFullYear() === y && dt.getMonth() === m && isDayWorkout(l); }).length;
+}
+
+function computeStatus(workoutDays, t) {
+  if (workoutDays >= 30) return { label: t('status_cyborg'),  emoji: '🤖', color: 'var(--cyan)'   };
+  if (workoutDays >= 20) return { label: t('status_pro'),     emoji: '🔥', color: 'var(--orange)' };
+  if (workoutDays >= 5)  return { label: t('status_athlete'), emoji: '💪', color: 'var(--lime)'   };
+  return                        { label: t('status_novice'),  emoji: '🌱', color: 'var(--text3)'  };
+}
+
+const BADGE_DEFS = [
+  // Без курения
+  { id:'smoke_7',     emoji:'🌱', name_key:'badge_smoke_7',     desc_key:'badge_smoke_7_d',     color:'var(--lime)', cat:'habits' },
+  { id:'smoke_21',    emoji:'🌿', name_key:'badge_smoke_21',    desc_key:'badge_smoke_21_d',    color:'var(--lime)', cat:'habits' },
+  { id:'smoke_50',    emoji:'🫁', name_key:'badge_smoke_50',    desc_key:'badge_smoke_50_d',    color:'var(--lime)', cat:'habits' },
+  { id:'smoke_100',   emoji:'💚', name_key:'badge_smoke_100',   desc_key:'badge_smoke_100_d',   color:'var(--lime)', cat:'habits' },
+  { id:'smoke_365',   emoji:'🦅', name_key:'badge_smoke_365',   desc_key:'badge_smoke_365_d',   color:'var(--lime)', cat:'habits' },
+  // Без алкоголя
+  { id:'alco_7',      emoji:'🧊', name_key:'badge_alco_7',      desc_key:'badge_alco_7_d',      color:'var(--cyan)', cat:'habits' },
+  { id:'alco_30',     emoji:'💧', name_key:'badge_alco_30',     desc_key:'badge_alco_30_d',     color:'var(--cyan)', cat:'habits' },
+  { id:'alco_100',    emoji:'🌊', name_key:'badge_alco_100',    desc_key:'badge_alco_100_d',    color:'var(--cyan)', cat:'habits' },
+  { id:'alco_365',    emoji:'🏆', name_key:'badge_alco_365',    desc_key:'badge_alco_365_d',    color:'var(--cyan)', cat:'habits' },
+  // Без сахара
+  { id:'sugar_7',     emoji:'🍎', name_key:'badge_sugar_7',     desc_key:'badge_sugar_7_d',     color:'var(--orange)', cat:'habits' },
+  { id:'sugar_30',    emoji:'🥗', name_key:'badge_sugar_30',    desc_key:'badge_sugar_30_d',    color:'var(--orange)', cat:'habits' },
+  // Без кофе
+  { id:'coffee_7',    emoji:'☕', name_key:'badge_coffee_7',    desc_key:'badge_coffee_7_d',    color:'var(--purple)', cat:'habits' },
+  { id:'coffee_30',   emoji:'🧘', name_key:'badge_coffee_30',   desc_key:'badge_coffee_30_d',   color:'var(--purple)', cat:'habits' },
+  // Тренировки
+  { id:'workout_1',   emoji:'🏋️', name_key:'badge_workout_1',   desc_key:'badge_workout_1_d',   color:'var(--orange)', cat:'fitness' },
+  { id:'workout_10',  emoji:'💪', name_key:'badge_workout_10',  desc_key:'badge_workout_10_d',  color:'var(--orange)', cat:'fitness' },
+  { id:'workout_25',  emoji:'🔥', name_key:'badge_workout_25',  desc_key:'badge_workout_25_d',  color:'#FF453A', cat:'fitness' },
+  { id:'workout_50',  emoji:'⚡', name_key:'badge_workout_50',  desc_key:'badge_workout_50_d',  color:'#FF453A', cat:'fitness' },
+  { id:'workout_100', emoji:'🤖', name_key:'badge_workout_100', desc_key:'badge_workout_100_d', color:'var(--cyan)', cat:'fitness' },
+  // Стабильность (кольца)
+  { id:'rings_3',     emoji:'🎯', name_key:'badge_rings_3',     desc_key:'badge_rings_3_d',     color:'#30D158', cat:'consistency' },
+  { id:'rings_7',     emoji:'💎', name_key:'badge_rings_7',     desc_key:'badge_rings_7_d',     color:'#30D158', cat:'consistency' },
+];
+
+function computeUnlocked(habits, logs) {
+  const h = k => habits[k] || {};
+  const sm = totalHabitDays(h('noSmoking'));
+  const al = totalHabitDays(h('noAlcohol'));
+  const su = totalHabitDays(h('noSugar'));
+  const co = totalHabitDays(h('noCoffee'));
+  const wt = countWorkoutDays(logs);
+  const rs = countAllRingsClosedStreak(logs);
+  return {
+    smoke_7: sm>=7,   smoke_21: sm>=21,  smoke_50: sm>=50,  smoke_100: sm>=100, smoke_365: sm>=365,
+    alco_7:  al>=7,   alco_30:  al>=30,  alco_100: al>=100, alco_365:  al>=365,
+    sugar_7: su>=7,   sugar_30: su>=30,
+    coffee_7:co>=7,   coffee_30:co>=30,
+    workout_1: wt>=1,  workout_10: wt>=10, workout_25: wt>=25, workout_50: wt>=50, workout_100: wt>=100,
+    rings_3: rs>=3,   rings_7: rs>=7,
+  };
+}
+
+// ─── XP / Leveling System ───────────────────────────────────────────
+function xpForLevel(lvl) { return lvl * 500; }
+function computeXPLevel(totalXp) {
+  const safeXp = (typeof totalXp === 'number' && isFinite(totalXp) && totalXp >= 0) ? Math.floor(totalXp) : 0;
+  let level = 1, spent = 0;
+  while (level < 9999) {
+    const needed = xpForLevel(level);
+    if (spent + needed > safeXp) break;
+    spent += needed;
+    level++;
+  }
+  return { level, xpInLevel: safeXp - spent, xpForNext: xpForLevel(level) };
+}
+function getCyberRank(level) {
+  if (level >= 51) return 'Высший Разум (SkyNet)';
+  if (level >= 36) return 'Кибер-Титан';
+  if (level >= 21) return 'Боевой Андроид';
+  if (level >= 13) return 'Дополненный Человек';
+  if (level >= 6)  return 'Кибер-Неофит';
+  return 'Биологический Образец';
+}
+
+// ─── Migrate old data ─────────────────────────────────────────────
+(function migrateOldData() {
+  const all = getAllLogs(); let migrated = false;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('cyborg_daily_')) {
+      const date = k.replace('cyborg_daily_', '');
+      if (!all[date]) { try { all[date] = JSON.parse(localStorage.getItem(k)); migrated = true; } catch {} }
+    }
+  }
+  if (migrated) setStorage(LOGS_KEY, all);
+})();
+
+// ─── Translations ─────────────────────────────────────────────────
+const TRANSLATIONS = {
+  ru: {
+    nav_sleep:'Сон', nav_activity:'Активность', nav_supps:'БАДы',
+    nav_nutrition:'Питание', nav_workout:'Тренировка', nav_recovery:'Восст.',
+    tab_profile:'Профиль', tab_habits:'Привычки', tab_stats:'Статистика', tab_settings:'Настройки',
+    btn_back:'‹ Назад', btn_add:'+ Добавить', btn_cancel:'Отмена', btn_save:'Сохранить',
+    today:'Сегодня', hello:'Привет,', your_status:'Ваш статус',
+    status_novice:'Новичок', status_athlete:'Атлет', status_pro:'Прокачанный', status_cyborg:'Киборг',
+    sleep_title:'🌙 Сон и Восстановление', sleep_hours:'Часы сна', sleep_quality:'Качество сна',
+    sleep_readiness:'Готовность', energy_label:'Уровень энергии / ЦНС',
+    activity_title:'⚡ Активность и Метрики', active_kcal:'Активные ккал',
+    avg_hr:'Средний пульс (уд/мин)', morning_weight:'Утренний вес',
+    activity_summary:'Сводка активности', kcal_burned:'ккал сожжено', bpm_avg:'уд/мин (сред.)',
+    supps_title:'💊 БАДы и Фарма', period_morning:'🌅 Утро', period_day:'☀️ День', period_evening:'🌙 Вечер',
+    supps_empty:'Список пуст. Добавьте позицию.', supps_add_title:'Добавить БАД / препарат',
+    supps_name:'Название', supps_dose:'Доза (необязательно)', done_today:'Принято сегодня',
+    nutrition_title:'🥗 Питание и Вода', hydration:'💧 Гидратация',
+    kcal_balance:'Баланс калорий', consumed:'Потреблено', burned:'Сожжено', balance:'Баланс',
+    meals_title:'Приёмы пищи', meal_add_title:'Добавить приём пищи', scan_barcode:'Сканировать штрихкод',
+    meal_name:'Название', portion_g:'Вес порции (г)', total_values:'Итоговые значения',
+    autocalc:'Авто-расчёт (на 100г + порция)',
+    proteins:'Белки', fats:'Жиры', carbs:'Углеводы', kcal:'Ккал',
+    add_water:'+250 мл', no_meals:'Добавьте первый приём пищи',
+    cal_deficit:'📉 Дефицит — хорошо для жиросжигания', cal_surplus:'📈 Профицит — набор массы', cal_balanced:'⚖️ Около нуля — поддержание',
+    workout_title:'💪 Тренировка', cardio_section:'🏃 Кардио', strength_section:'🏋️ Силовая',
+    machine:'Тренажер', angle:'Угол / Уклон', speed:'Скорость',
+    duration:'Время (мин)', distance:'Дистанция (км)',
+    add_exercise:'+ Добавить упражнение', add_set:'+ Подход',
+    weight_col:'Вес кг', reps_col:'Повт.', dropset:'Дроп', volume:'Объём',
+    no_cardio:'— кардио не выполнялось', no_strength:'Добавьте первое упражнение', no_sets:'Нет подходов',
+    recovery_title:'🔄 Восстановление и Заметки', day_notes:'Заметки дня', recovery_summary:'Итог восстановления',
+    sauna:'Сауна', massage:'Массаж', pressotherapy:'Прессотерапия (сапоги)',
+    done:'Выполнено ✓', not_done:'Не выполнено',
+    habits_title:'🧠 Дисциплина и Привычки', no_smoking:'Без сигарет', no_alcohol:'Без алкоголя',
+    smoke_days:'дней без курения', alcohol_days:'дней без алкоголя',
+    tracking_active:'● Активно', tracking_inactive:'○ Не отслеживается',
+    reset_title:'Сбросить счётчик?', confirm_relapse:'💔 Сброс', first_day:'День первый — начало большого пути 🚀',
+    all_milestones:'🏆 Все milestone пройдены! Ты — легенда!', hold_on:'Держись!',
+    days_left:'до', habit_tip_title:'💡 Совет системы',
+    habit_tip:'Каждый день без вредных привычек — прямая инвестиция в биологическую эффективность. Первые 3 дня — самые сложные. После 21 дня формируется новая нейронная привычка.',
+    stats_title:'📊 Статистика', workouts_week:'Тренировок на этой неделе', workouts_month:'Тренировок за месяц',
+    overall_stats:'Общая статистика', total_workouts:'всего тренировок',
+    weight_dynamic:'Динамика веса — 14 дней', achievements_board:'🏆 Доска достижений',
+    goal_week:'Цель: 4 тренировки', goal_month:'Цель: 20 в месяц',
+    goal_reached_week:'🔥 Цель достигнута!', goal_reached_month:'🏆 Цель достигнута!',
+    profile_title:'Профиль', personal_data:'Личные данные',
+    name:'Имя', age:'Возраст (лет)', height:'Рост (см)', weight_field:'Текущий вес (кг)',
+    goal_field:'Цель', activity_level:'Уровень активности',
+    goal_cut:'🔥 Сушка (жиросжигание)', goal_bulk:'💪 Набор массы', goal_maintain:'⚖️ Поддержание формы',
+    al_sedentary:'💻 Сидячий (офис)', al_moderate:'🚶 Умеренный (1–3 трен/нед)',
+    al_active:'🏋️ Активный (3–5 трен/нед)', al_very_active:'⚡ Очень активный (6–7 дней)',
+    goals_rings:'Цели (кольца активности)', active_kcal_goal:'🔴 Активные ккал / день',
+    cal_goal:'🟢 Целевые калории питания', water_goal:'🔵 Цель: Вода (литры)',
+    auto_calculated:'⚡ Рассчитано автоматически · Вес+% жира+Цель', goals_updated:'✅ Цели пересчитаны автоматически',
+    inbody_title:'Данные InBody', inbody_subtitle:'Анализ состава тела',
+    inbody_upload:'📷 Загрузить фото InBody',
+    muscle_mass:'Скелетно-мышечная масса', body_fat:'Процент телесного жира', total_water_field:'Общая вода организма',
+    kg_muscle:'кг мышц', pct_fat:'% жира', liters_water:'л воды',
+    metabolism_title:'🧮 Метаболический расчёт', bmr_label:'BMR', tdee_label:'TDEE', target_label:'Цель',
+    kcal_day:'ккал / день', expense_day:'расход / день',
+    lbm_label:'ЧМТ (сухая масса)', water_day:'л/день',
+    mode_cut:'📉 TDEE − 500 ккал · Режим жиросжигания', mode_bulk:'📈 TDEE + 300 ккал · Режим набора массы',
+    mode_maintain:'⚖️ TDEE · Режим поддержания формы', mode_select:'💡 Укажите цель для выбора режима',
+    settings_title:'⚙️ Настройки', language:'Язык интерфейса', visible_tabs:'Видимые вкладки',
+    visible_tabs_hint:'Скройте ненужные вкладки из нижнего меню (минимум 2)',
+    export_btn:'Сгенерировать лог для ИИ',
+    scan_init:'Инициализация камеры...', scan_place:'Поместите штрихкод в рамку',
+    scan_no_support:'Сканер не поддерживается. Используйте Chrome или Safari 17+.',
+    scan_no_camera:'Нет доступа к камере. Разрешите доступ в настройках.',
+    scan_timeout:'⏱', scan_not_found:'Штрихкод не распознан',
+    scan_manually:'Введите данные вручную или попробуйте снова.',
+    scan_manual_btn:'Вручную', scan_retry:'🔄 Снова', scan_cancel:'Отмена',
+    searching:'🔍 Ищем продукт...', product_found:'✅ Продукт найден!', product_not_found:'Продукт не найден, введите данные вручную.',
+    scanning:'Загружаем данные...',
+    badge_clean_lungs:'Чистые лёгкие', badge_clean_lungs_d:'1 нед. без сигарет',
+    badge_sober_mind:'Трезвый разум', badge_sober_mind_d:'100 дней без алкоголя',
+    badge_iron_will:'Железная воля', badge_iron_will_d:'4 тренировки/неделю',
+    badge_athlete:'Атлет', badge_athlete_d:'20 дней тренировок',
+    badge_cyborg:'Киборг', badge_cyborg_d:'30 дней тренировок',
+    badge_unlocked:'ПОЛУЧЕНО ✓', achievement_toast:'🏆 Достижение: ',
+    // Привычки
+    no_sugar:'Без сахара', no_coffee:'Без кофе',
+    sugar_days:'дней без сахара', coffee_days:'дней без кофе',
+    habit_offset_label:'Уже держусь', habit_offset_unit:'дней',
+    // Конструктор восстановления
+    recovery_constructor:'Мои ритуалы восстановления',
+    recovery_template_add:'+ Добавить ритуал',
+    recovery_no_templates:'Добавьте ритуалы в Профиле',
+    // Новые ачивки — Курение
+    badge_smoke_7:'Первая неделя', badge_smoke_7_d:'7 дней без сигарет',
+    badge_smoke_21:'Привычка сломана', badge_smoke_21_d:'21 день без никотина',
+    badge_smoke_50:'Новые лёгкие', badge_smoke_50_d:'50 дней без курения',
+    badge_smoke_100:'Чемпион', badge_smoke_100_d:'100 дней без никотина',
+    badge_smoke_365:'Феникс', badge_smoke_365_d:'1 год без сигарет',
+    // Алкоголь
+    badge_alco_7:'Трезвая неделя', badge_alco_7_d:'7 дней без алкоголя',
+    badge_alco_30:'Чистый месяц', badge_alco_30_d:'30 дней без алкоголя',
+    badge_alco_100:'Трезвый разум+', badge_alco_100_d:'100 дней без алкоголя',
+    badge_alco_365:'Год трезвости', badge_alco_365_d:'365 дней без алкоголя',
+    // Сахар
+    badge_sugar_7:'Без сахара нед.', badge_sugar_7_d:'7 дней без сахара',
+    badge_sugar_30:'Чистое питание', badge_sugar_30_d:'30 дней без сахара',
+    // Кофе
+    badge_coffee_7:'Без кофеина нед.', badge_coffee_7_d:'7 дней без кофе',
+    badge_coffee_30:'Стальные нервы', badge_coffee_30_d:'30 дней без кофе',
+    // Тренировки
+    badge_workout_1:'Первый шаг', badge_workout_1_d:'Первая тренировка',
+    badge_workout_10:'В ритме', badge_workout_10_d:'10 тренировок',
+    badge_workout_25:'Посвящённый', badge_workout_25_d:'25 тренировок',
+    badge_workout_50:'Ветеран зала', badge_workout_50_d:'50 тренировок',
+    badge_workout_100:'Легенда', badge_workout_100_d:'100 тренировок',
+    // Стабильность (кольца)
+    badge_rings_3:'Тройная серия', badge_rings_3_d:'3 дня подряд все кольца',
+    badge_rings_7:'Идеальная неделя', badge_rings_7_d:'7 дней подряд все кольца',
+    ach_section_habits:'Привычки', ach_section_fitness:'Фитнес', ach_section_consistency:'Стабильность',
+  },
+  en: {
+    nav_sleep:'Sleep', nav_activity:'Activity', nav_supps:'Supps',
+    nav_nutrition:'Nutrition', nav_workout:'Workout', nav_recovery:'Recovery',
+    tab_profile:'Profile', tab_habits:'Habits', tab_stats:'Stats', tab_settings:'Settings',
+    btn_back:'‹ Back', btn_add:'+ Add', btn_cancel:'Cancel', btn_save:'Save',
+    today:'Today', hello:'Hello,', your_status:'Your status',
+    status_novice:'Beginner', status_athlete:'Athlete', status_pro:'Advanced', status_cyborg:'Cyborg',
+    sleep_title:'🌙 Sleep & Recovery', sleep_hours:'Sleep hours', sleep_quality:'Sleep quality',
+    sleep_readiness:'Readiness', energy_label:'Energy / CNS Level',
+    activity_title:'⚡ Activity & Metrics', active_kcal:'Active kcal',
+    avg_hr:'Avg heart rate (bpm)', morning_weight:'Morning weight',
+    activity_summary:'Activity summary', kcal_burned:'kcal burned', bpm_avg:'bpm (avg)',
+    supps_title:'💊 Supplements & Pharma', period_morning:'🌅 Morning', period_day:'☀️ Afternoon', period_evening:'🌙 Evening',
+    supps_empty:'List is empty. Add an item.', supps_add_title:'Add supplement',
+    supps_name:'Name', supps_dose:'Dose (optional)', done_today:'Taken today',
+    nutrition_title:'🥗 Nutrition & Water', hydration:'💧 Hydration',
+    kcal_balance:'Calorie Balance', consumed:'Consumed', burned:'Burned', balance:'Balance',
+    meals_title:'Meals', meal_add_title:'Add meal', scan_barcode:'Scan barcode',
+    meal_name:'Name', portion_g:'Portion weight (g)', total_values:'Total values',
+    autocalc:'Auto-calc (per 100g + serving)',
+    proteins:'Protein', fats:'Fat', carbs:'Carbs', kcal:'Kcal',
+    add_water:'+250 ml', no_meals:'Add your first meal',
+    cal_deficit:'📉 Deficit — good for fat loss', cal_surplus:'📈 Surplus — muscle gain', cal_balanced:'⚖️ Near zero — maintenance',
+    workout_title:'💪 Workout', cardio_section:'🏃 Cardio', strength_section:'🏋️ Strength',
+    machine:'Machine', angle:'Incline / Angle', speed:'Speed',
+    duration:'Duration (min)', distance:'Distance (km)',
+    add_exercise:'+ Add exercise', add_set:'+ Set',
+    weight_col:'kg', reps_col:'Reps', dropset:'Drop', volume:'Volume',
+    no_cardio:'— no cardio performed', no_strength:'Add your first exercise', no_sets:'No sets',
+    recovery_title:'🔄 Recovery & Notes', day_notes:'Day notes', recovery_summary:'Recovery summary',
+    sauna:'Sauna', massage:'Massage', pressotherapy:'Pressotherapy',
+    done:'Done ✓', not_done:'Not done',
+    habits_title:'🧠 Discipline & Habits', no_smoking:'No smoking', no_alcohol:'No alcohol',
+    smoke_days:'days without smoking', alcohol_days:'days without alcohol',
+    tracking_active:'● Active', tracking_inactive:'○ Not tracked',
+    reset_title:'Reset counter?', confirm_relapse:'💔 Reset', first_day:'Day one — a great journey begins 🚀',
+    all_milestones:'🏆 All milestones reached! You are a legend!', hold_on:'Keep going!',
+    days_left:'left to', habit_tip_title:'💡 System tip',
+    habit_tip:'Every day without bad habits is a direct investment in your biological efficiency. The first 3 days are hardest. After 21 days a new neural habit forms.',
+    stats_title:'📊 Statistics', workouts_week:'Workouts this week', workouts_month:'Workouts this month',
+    overall_stats:'Overall statistics', total_workouts:'total workouts',
+    weight_dynamic:'Weight trend — 14 days', achievements_board:'🏆 Achievements Board',
+    goal_week:'Goal: 4 workouts', goal_month:'Goal: 20 per month',
+    goal_reached_week:'🔥 Goal reached!', goal_reached_month:'🏆 Goal reached!',
+    profile_title:'Profile', personal_data:'Personal data',
+    name:'Name', age:'Age (years)', height:'Height (cm)', weight_field:'Current weight (kg)',
+    goal_field:'Goal', activity_level:'Activity level',
+    goal_cut:'🔥 Cut (fat loss)', goal_bulk:'💪 Bulk (muscle gain)', goal_maintain:'⚖️ Maintain',
+    al_sedentary:'💻 Sedentary (desk job)', al_moderate:'🚶 Moderate (1–3x/week)',
+    al_active:'🏋️ Active (3–5x/week)', al_very_active:'⚡ Very active (6–7 days)',
+    goals_rings:'Goals (activity rings)', active_kcal_goal:'🔴 Active kcal / day',
+    cal_goal:'🟢 Target calories', water_goal:'🔵 Water goal (liters)',
+    auto_calculated:'⚡ Auto-calculated · Weight+%BF+Goal', goals_updated:'✅ Goals auto-updated',
+    inbody_title:'InBody Data', inbody_subtitle:'Body composition analysis',
+    inbody_upload:'📷 Upload InBody photo',
+    muscle_mass:'Skeletal muscle mass', body_fat:'Body fat percentage', total_water_field:'Total body water',
+    kg_muscle:'kg muscle', pct_fat:'% fat', liters_water:'L water',
+    metabolism_title:'🧮 Metabolic calculation', bmr_label:'BMR', tdee_label:'TDEE', target_label:'Target',
+    kcal_day:'kcal / day', expense_day:'expense / day',
+    lbm_label:'LBM (lean mass)', water_day:'L/day',
+    mode_cut:'📉 TDEE − 500 kcal · Fat loss mode', mode_bulk:'📈 TDEE + 300 kcal · Bulk mode',
+    mode_maintain:'⚖️ TDEE · Maintenance mode', mode_select:'💡 Select a goal to apply a mode',
+    settings_title:'⚙️ Settings', language:'Interface language', visible_tabs:'Visible tabs',
+    visible_tabs_hint:'Hide tabs you don\'t need (minimum 2)',
+    export_btn:'Generate AI log',
+    scan_init:'Initializing camera...', scan_place:'Place barcode in frame',
+    scan_no_support:'Scanner not supported. Use Chrome or Safari 17+.',
+    scan_no_camera:'No camera access. Allow access in settings.',
+    scan_timeout:'⏱', scan_not_found:'Barcode not recognized',
+    scan_manually:'Enter data manually or try again.',
+    scan_manual_btn:'Manual', scan_retry:'🔄 Retry', scan_cancel:'Cancel',
+    searching:'🔍 Searching product...', product_found:'✅ Product found!', product_not_found:'Product not found, enter data manually.',
+    scanning:'Loading...',
+    badge_clean_lungs:'Clean Lungs', badge_clean_lungs_d:'1 week no smoking',
+    badge_sober_mind:'Clear Mind', badge_sober_mind_d:'100 days no alcohol',
+    badge_iron_will:'Iron Will', badge_iron_will_d:'4 workouts/week',
+    badge_athlete:'Athlete', badge_athlete_d:'20 training days',
+    badge_cyborg:'Cyborg', badge_cyborg_d:'30 training days',
+    badge_unlocked:'UNLOCKED ✓', achievement_toast:'🏆 Achievement: ',
+    // Habits (Phase 2)
+    no_sugar:'No Sugar', no_coffee:'No Coffee',
+    sugar_days:'days no sugar', coffee_days:'days no coffee',
+    habit_offset_label:'Already keeping', habit_offset_unit:'days',
+    // Recovery Constructor
+    recovery_constructor:'My Recovery Rituals',
+    recovery_template_add:'+ Add Ritual',
+    recovery_no_templates:'Add rituals in Profile',
+    // Smoking badges
+    badge_smoke_7:'First Week', badge_smoke_7_d:'7 days no smoking',
+    badge_smoke_21:'Habit Broken', badge_smoke_21_d:'21 days no nicotine',
+    badge_smoke_50:'New Lungs', badge_smoke_50_d:'50 days no smoking',
+    badge_smoke_100:'Champion', badge_smoke_100_d:'100 days no nicotine',
+    badge_smoke_365:'Phoenix', badge_smoke_365_d:'1 year no smoking',
+    // Alcohol badges
+    badge_alco_7:'Sober Week', badge_alco_7_d:'7 days no alcohol',
+    badge_alco_30:'Clean Month', badge_alco_30_d:'30 days no alcohol',
+    badge_alco_100:'Clear Mind+', badge_alco_100_d:'100 days no alcohol',
+    badge_alco_365:'Year Sober', badge_alco_365_d:'365 days no alcohol',
+    // Sugar badges
+    badge_sugar_7:'Sugar-Free Wk', badge_sugar_7_d:'7 days no sugar',
+    badge_sugar_30:'Clean Eating', badge_sugar_30_d:'30 days no sugar',
+    // Coffee badges
+    badge_coffee_7:'Caffeine-Free Wk', badge_coffee_7_d:'7 days no coffee',
+    badge_coffee_30:'Steel Nerves', badge_coffee_30_d:'30 days no coffee',
+    // Workout badges
+    badge_workout_1:'First Step', badge_workout_1_d:'First workout',
+    badge_workout_10:'In Rhythm', badge_workout_10_d:'10 workouts',
+    badge_workout_25:'Dedicated', badge_workout_25_d:'25 workouts',
+    badge_workout_50:'Gym Veteran', badge_workout_50_d:'50 workouts',
+    badge_workout_100:'Legend', badge_workout_100_d:'100 workouts',
+    // Consistency badges
+    badge_rings_3:'Triple Streak', badge_rings_3_d:'3 days all rings closed',
+    badge_rings_7:'Perfect Week', badge_rings_7_d:'7 days all rings closed',
+    ach_section_habits:'Habits', ach_section_fitness:'Fitness', ach_section_consistency:'Consistency',
+  },
+  es: {
+    nav_sleep:'Sueño', nav_activity:'Actividad', nav_supps:'Supl.',
+    nav_nutrition:'Nutrición', nav_workout:'Entreno', nav_recovery:'Recup.',
+    tab_profile:'Perfil', tab_habits:'Hábitos', tab_stats:'Estadísticas', tab_settings:'Ajustes',
+    btn_back:'‹ Volver', btn_add:'+ Añadir', btn_cancel:'Cancelar', btn_save:'Guardar',
+    today:'Hoy', hello:'¡Hola,', your_status:'Tu estado',
+    status_novice:'Principiante', status_athlete:'Atleta', status_pro:'Avanzado', status_cyborg:'Cyborg',
+    sleep_title:'🌙 Sueño y Recuperación', sleep_hours:'Horas de sueño', sleep_quality:'Calidad del sueño',
+    sleep_readiness:'Preparación', energy_label:'Energía / SNC',
+    activity_title:'⚡ Actividad y Métricas', active_kcal:'kcal activas',
+    avg_hr:'FC media (lpm)', morning_weight:'Peso matutino',
+    activity_summary:'Resumen actividad', kcal_burned:'kcal quemadas', bpm_avg:'lpm (media)',
+    supps_title:'💊 Suplementos y Fármacos', period_morning:'🌅 Mañana', period_day:'☀️ Tarde', period_evening:'🌙 Noche',
+    supps_empty:'Lista vacía. Añade una entrada.', supps_add_title:'Añadir suplemento',
+    supps_name:'Nombre', supps_dose:'Dosis (opcional)', done_today:'Tomado hoy',
+    nutrition_title:'🥗 Nutrición e Hidratación', hydration:'💧 Hidratación',
+    kcal_balance:'Balance calórico', consumed:'Consumido', burned:'Quemado', balance:'Balance',
+    meals_title:'Comidas', meal_add_title:'Añadir comida', scan_barcode:'Escanear código',
+    meal_name:'Nombre', portion_g:'Peso porción (g)', total_values:'Valores totales',
+    autocalc:'Cálculo auto (por 100g + porción)',
+    proteins:'Proteínas', fats:'Grasas', carbs:'Carbos', kcal:'Kcal',
+    add_water:'+250 ml', no_meals:'Añade tu primera comida',
+    cal_deficit:'📉 Déficit — ideal para perder grasa', cal_surplus:'📈 Superávit — ganancia muscular', cal_balanced:'⚖️ Equilibrado',
+    workout_title:'💪 Entrenamiento', cardio_section:'🏃 Cardio', strength_section:'🏋️ Fuerza',
+    machine:'Máquina', angle:'Inclinación', speed:'Velocidad',
+    duration:'Duración (min)', distance:'Distancia (km)',
+    add_exercise:'+ Añadir ejercicio', add_set:'+ Serie',
+    weight_col:'kg', reps_col:'Reps.', dropset:'Drop', volume:'Volumen',
+    no_cardio:'— sin cardio realizado', no_strength:'Añade tu primer ejercicio', no_sets:'Sin series',
+    recovery_title:'🔄 Recuperación y Notas', day_notes:'Notas del día', recovery_summary:'Resumen recuperación',
+    sauna:'Sauna', massage:'Masaje', pressotherapy:'Presoterapia',
+    done:'Completado ✓', not_done:'No realizado',
+    habits_title:'🧠 Disciplina y Hábitos', no_smoking:'Sin tabaco', no_alcohol:'Sin alcohol',
+    smoke_days:'días sin fumar', alcohol_days:'días sin alcohol',
+    tracking_active:'● Activo', tracking_inactive:'○ Sin seguimiento',
+    reset_title:'¿Reiniciar contador?', confirm_relapse:'💔 Reiniciar', first_day:'Primer día — ¡comienza el camino! 🚀',
+    all_milestones:'🏆 ¡Todos los hitos alcanzados! ¡Eres una leyenda!', hold_on:'¡Sigue adelante!',
+    days_left:'quedan para', habit_tip_title:'💡 Consejo del sistema',
+    habit_tip:'Cada día sin malos hábitos es una inversión en tu eficiencia biológica. Los primeros 3 días son los más difíciles. Después de 21 días se forma un nuevo hábito.',
+    stats_title:'📊 Estadísticas', workouts_week:'Entrenamientos esta semana', workouts_month:'Entrenamientos este mes',
+    overall_stats:'Estadísticas generales', total_workouts:'entrenamientos totales',
+    weight_dynamic:'Evolución del peso — 14 días', achievements_board:'🏆 Tablero de logros',
+    goal_week:'Meta: 4 entrenamientos', goal_month:'Meta: 20 al mes',
+    goal_reached_week:'🔥 ¡Meta alcanzada!', goal_reached_month:'🏆 ¡Meta alcanzada!',
+    profile_title:'Perfil', personal_data:'Datos personales',
+    name:'Nombre', age:'Edad (años)', height:'Altura (cm)', weight_field:'Peso actual (kg)',
+    goal_field:'Objetivo', activity_level:'Nivel de actividad',
+    goal_cut:'🔥 Definición (perder grasa)', goal_bulk:'💪 Volumen (ganar músculo)', goal_maintain:'⚖️ Mantenimiento',
+    al_sedentary:'💻 Sedentario (oficina)', al_moderate:'🚶 Moderado (1–3x/sem)',
+    al_active:'🏋️ Activo (3–5x/sem)', al_very_active:'⚡ Muy activo (6–7 días)',
+    goals_rings:'Metas (anillos)', active_kcal_goal:'🔴 kcal activas / día',
+    cal_goal:'🟢 Calorías objetivo', water_goal:'🔵 Meta: Agua (litros)',
+    auto_calculated:'⚡ Calculado automáticamente', goals_updated:'✅ Metas actualizadas automáticamente',
+    inbody_title:'Datos InBody', inbody_subtitle:'Análisis de composición corporal',
+    inbody_upload:'📷 Subir foto InBody',
+    muscle_mass:'Masa músculo-esquelética', body_fat:'Porcentaje de grasa', total_water_field:'Agua corporal total',
+    kg_muscle:'kg músculo', pct_fat:'% grasa', liters_water:'L agua',
+    metabolism_title:'🧮 Cálculo metabólico', bmr_label:'BMR', tdee_label:'TDEE', target_label:'Meta',
+    kcal_day:'kcal / día', expense_day:'gasto / día',
+    lbm_label:'MCM (masa magra)', water_day:'L/día',
+    mode_cut:'📉 TDEE − 500 kcal · Modo definición', mode_bulk:'📈 TDEE + 300 kcal · Modo volumen',
+    mode_maintain:'⚖️ TDEE · Modo mantenimiento', mode_select:'💡 Selecciona un objetivo para aplicar un modo',
+    settings_title:'⚙️ Ajustes', language:'Idioma de la interfaz', visible_tabs:'Pestañas visibles',
+    visible_tabs_hint:'Oculta las pestañas que no necesitas (mínimo 2)',
+    export_btn:'Generar registro IA',
+    scan_init:'Inicializando cámara...', scan_place:'Coloca el código en el marco',
+    scan_no_support:'Escáner no compatible. Usa Chrome o Safari 17+.',
+    scan_no_camera:'Sin acceso a cámara. Permite el acceso en ajustes.',
+    scan_timeout:'⏱', scan_not_found:'Código no reconocido',
+    scan_manually:'Introduce datos manualmente o inténtalo de nuevo.',
+    scan_manual_btn:'Manual', scan_retry:'🔄 Reintentar', scan_cancel:'Cancelar',
+    searching:'🔍 Buscando producto...', product_found:'✅ ¡Producto encontrado!', product_not_found:'Producto no encontrado, introduce datos manualmente.',
+    scanning:'Cargando...',
+    badge_clean_lungs:'Pulmones Limpios', badge_clean_lungs_d:'1 sem. sin tabaco',
+    badge_sober_mind:'Mente Clara', badge_sober_mind_d:'100 días sin alcohol',
+    badge_iron_will:'Voluntad de Hierro', badge_iron_will_d:'4 entrenos/semana',
+    badge_athlete:'Atleta', badge_athlete_d:'20 días de entrenamiento',
+    badge_cyborg:'Cyborg', badge_cyborg_d:'30 días de entrenamiento',
+    // Phase 2 - Habits & Achievements
+    no_sugar:'Sin azúcar', no_coffee:'Sin café',
+    sugar_days:'días sin azúcar', coffee_days:'días sin café',
+    habit_offset_label:'Ya llevo', habit_offset_unit:'días',
+    recovery_constructor:'Mis rituales', recovery_template_add:'+ Añadir', recovery_no_templates:'Añade rituales en Perfil',
+    badge_smoke_7:'1ª semana', badge_smoke_7_d:'7 días sin fumar',
+    badge_smoke_21:'Hábito roto', badge_smoke_21_d:'21 días sin nicotina',
+    badge_smoke_50:'Pulmones nuevos', badge_smoke_50_d:'50 días sin fumar',
+    badge_smoke_100:'Campeón', badge_smoke_100_d:'100 días sin nicotina',
+    badge_smoke_365:'Fénix', badge_smoke_365_d:'1 año sin fumar',
+    badge_alco_7:'Semana sobria', badge_alco_7_d:'7 días sin alcohol',
+    badge_alco_30:'Mes limpio', badge_alco_30_d:'30 días sin alcohol',
+    badge_alco_100:'Mente clara+', badge_alco_100_d:'100 días sin alcohol',
+    badge_alco_365:'Año sobrio', badge_alco_365_d:'365 días sin alcohol',
+    badge_sugar_7:'7 días sin azúcar', badge_sugar_7_d:'1 semana sin azúcar',
+    badge_sugar_30:'Nutrición limpia', badge_sugar_30_d:'30 días sin azúcar',
+    badge_coffee_7:'7 días sin café', badge_coffee_7_d:'1 semana sin cafeína',
+    badge_coffee_30:'Nervios de acero', badge_coffee_30_d:'30 días sin café',
+    badge_workout_1:'Primer paso', badge_workout_1_d:'Primer entrenamiento',
+    badge_workout_10:'En ritmo', badge_workout_10_d:'10 entrenamientos',
+    badge_workout_25:'Dedicado', badge_workout_25_d:'25 entrenamientos',
+    badge_workout_50:'Veterano', badge_workout_50_d:'50 entrenamientos',
+    badge_workout_100:'Leyenda', badge_workout_100_d:'100 entrenamientos',
+    badge_rings_3:'Triple racha', badge_rings_3_d:'3 días todos los anillos',
+    badge_rings_7:'Semana perfecta', badge_rings_7_d:'7 días todos los anillos',
+    ach_section_habits:'Hábitos', ach_section_fitness:'Fitness', ach_section_consistency:'Consistencia',
+    badge_unlocked:'OBTENIDO ✓', achievement_toast:'🏆 Logro: ',
+  },
+  pt: {
+    nav_sleep:'Sono', nav_activity:'Atividade', nav_supps:'Supl.',
+    nav_nutrition:'Nutrição', nav_workout:'Treino', nav_recovery:'Recup.',
+    tab_profile:'Perfil', tab_habits:'Hábitos', tab_stats:'Estatísticas', tab_settings:'Config.',
+    btn_back:'‹ Voltar', btn_add:'+ Adicionar', btn_cancel:'Cancelar', btn_save:'Salvar',
+    today:'Hoje', hello:'Olá,', your_status:'Seu status',
+    status_novice:'Iniciante', status_athlete:'Atleta', status_pro:'Avançado', status_cyborg:'Cyborg',
+    sleep_title:'🌙 Sono e Recuperação', sleep_hours:'Horas de sono', sleep_quality:'Qualidade do sono',
+    sleep_readiness:'Prontidão', energy_label:'Energia / SNC',
+    activity_title:'⚡ Atividade e Métricas', active_kcal:'kcal ativas',
+    avg_hr:'FC média (bpm)', morning_weight:'Peso matinal',
+    activity_summary:'Resumo de atividade', kcal_burned:'kcal queimadas', bpm_avg:'bpm (média)',
+    supps_title:'💊 Suplementos e Fármacos', period_morning:'🌅 Manhã', period_day:'☀️ Tarde', period_evening:'🌙 Noite',
+    supps_empty:'Lista vazia. Adicione um item.', supps_add_title:'Adicionar suplemento',
+    supps_name:'Nome', supps_dose:'Dose (opcional)', done_today:'Tomado hoje',
+    nutrition_title:'🥗 Nutrição e Água', hydration:'💧 Hidratação',
+    kcal_balance:'Balanço calórico', consumed:'Consumido', burned:'Queimado', balance:'Balanço',
+    meals_title:'Refeições', meal_add_title:'Adicionar refeição', scan_barcode:'Escanear código',
+    meal_name:'Nome', portion_g:'Peso da porção (g)', total_values:'Valores totais',
+    autocalc:'Cálculo auto (por 100g + porção)',
+    proteins:'Proteínas', fats:'Gorduras', carbs:'Carboidratos', kcal:'Kcal',
+    add_water:'+250 ml', no_meals:'Adicione sua primeira refeição',
+    cal_deficit:'📉 Déficit — ótimo para perda de gordura', cal_surplus:'📈 Superávit — ganho muscular', cal_balanced:'⚖️ Equilibrado',
+    workout_title:'💪 Treino', cardio_section:'🏃 Cardio', strength_section:'🏋️ Força',
+    machine:'Máquina', angle:'Inclinação', speed:'Velocidade',
+    duration:'Duração (min)', distance:'Distância (km)',
+    add_exercise:'+ Adicionar exercício', add_set:'+ Série',
+    weight_col:'kg', reps_col:'Reps.', dropset:'Drop', volume:'Volume',
+    no_cardio:'— sem cardio realizado', no_strength:'Adicione seu primeiro exercício', no_sets:'Sem séries',
+    recovery_title:'🔄 Recuperação e Notas', day_notes:'Notas do dia', recovery_summary:'Resumo recuperação',
+    sauna:'Sauna', massage:'Massagem', pressotherapy:'Pressoterapia',
+    done:'Concluído ✓', not_done:'Não realizado',
+    habits_title:'🧠 Disciplina e Hábitos', no_smoking:'Sem cigarro', no_alcohol:'Sem álcool',
+    smoke_days:'dias sem fumar', alcohol_days:'dias sem álcool',
+    tracking_active:'● Ativo', tracking_inactive:'○ Não rastreado',
+    reset_title:'Reiniciar contador?', confirm_relapse:'💔 Reiniciar', first_day:'Primeiro dia — a jornada começa! 🚀',
+    all_milestones:'🏆 Todos os marcos alcançados! Você é uma lenda!', hold_on:'Continue assim!',
+    days_left:'faltam para', habit_tip_title:'💡 Dica do sistema',
+    habit_tip:'Cada dia sem maus hábitos é um investimento direto na sua eficiência biológica. Os primeiros 3 dias são os mais difíceis. Após 21 dias um novo hábito se forma.',
+    stats_title:'📊 Estatísticas', workouts_week:'Treinos esta semana', workouts_month:'Treinos este mês',
+    overall_stats:'Estatísticas gerais', total_workouts:'treinos no total',
+    weight_dynamic:'Evolução do peso — 14 dias', achievements_board:'🏆 Quadro de conquistas',
+    goal_week:'Meta: 4 treinos', goal_month:'Meta: 20 por mês',
+    goal_reached_week:'🔥 Meta alcançada!', goal_reached_month:'🏆 Meta alcançada!',
+    profile_title:'Perfil', personal_data:'Dados pessoais',
+    name:'Nome', age:'Idade (anos)', height:'Altura (cm)', weight_field:'Peso atual (kg)',
+    goal_field:'Objetivo', activity_level:'Nível de atividade',
+    goal_cut:'🔥 Definição (perda de gordura)', goal_bulk:'💪 Volume (ganho muscular)', goal_maintain:'⚖️ Manutenção',
+    al_sedentary:'💻 Sedentário (escritório)', al_moderate:'🚶 Moderado (1–3x/sem)',
+    al_active:'🏋️ Ativo (3–5x/sem)', al_very_active:'⚡ Muito ativo (6–7 dias)',
+    goals_rings:'Metas (anéis de atividade)', active_kcal_goal:'🔴 kcal ativas / dia',
+    cal_goal:'🟢 Calorias alvo', water_goal:'🔵 Meta: Água (litros)',
+    auto_calculated:'⚡ Calculado automaticamente', goals_updated:'✅ Metas atualizadas automaticamente',
+    inbody_title:'Dados InBody', inbody_subtitle:'Análise de composição corporal',
+    inbody_upload:'📷 Carregar foto InBody',
+    muscle_mass:'Massa muscular esquelética', body_fat:'Percentual de gordura', total_water_field:'Água corporal total',
+    kg_muscle:'kg músculo', pct_fat:'% gordura', liters_water:'L água',
+    metabolism_title:'🧮 Cálculo metabólico', bmr_label:'BMR', tdee_label:'TDEE', target_label:'Meta',
+    kcal_day:'kcal / dia', expense_day:'gasto / dia',
+    lbm_label:'MCM (massa magra)', water_day:'L/dia',
+    mode_cut:'📉 TDEE − 500 kcal · Modo definição', mode_bulk:'📈 TDEE + 300 kcal · Modo volume',
+    mode_maintain:'⚖️ TDEE · Modo manutenção', mode_select:'💡 Selecione um objetivo para aplicar um modo',
+    settings_title:'⚙️ Configurações', language:'Idioma da interface', visible_tabs:'Abas visíveis',
+    visible_tabs_hint:'Oculte abas que você não precisa (mínimo 2)',
+    export_btn:'Gerar log para IA',
+    scan_init:'Inicializando câmera...', scan_place:'Coloque o código no quadro',
+    scan_no_support:'Scanner não compatível. Use Chrome ou Safari 17+.',
+    scan_no_camera:'Sem acesso à câmera. Permita o acesso nas configurações.',
+    scan_timeout:'⏱', scan_not_found:'Código não reconhecido',
+    scan_manually:'Insira os dados manualmente ou tente novamente.',
+    scan_manual_btn:'Manual', scan_retry:'🔄 Tentar novamente', scan_cancel:'Cancelar',
+    searching:'🔍 Buscando produto...', product_found:'✅ Produto encontrado!', product_not_found:'Produto não encontrado, insira os dados manualmente.',
+    scanning:'Carregando...',
+    badge_clean_lungs:'Pulmões Limpos', badge_clean_lungs_d:'1 sem. sem cigarro',
+    badge_sober_mind:'Mente Clara', badge_sober_mind_d:'100 dias sem álcool',
+    badge_iron_will:'Vontade de Ferro', badge_iron_will_d:'4 treinos/semana',
+    badge_athlete:'Atleta', badge_athlete_d:'20 dias de treino',
+    badge_cyborg:'Cyborg', badge_cyborg_d:'30 dias de treino',
+    badge_unlocked:'OBTIDO ✓', achievement_toast:'🏆 Conquista: ',
+  },
+};
+
+// ─── i18n Context ─────────────────────────────────────────────────
+const LangContext = createContext(k => k);
+function useT() { return useContext(LangContext); }
+
+// ─── Tutorial ─────────────────────────────────────────────────────
+const TutorialOverlay = React.memo(function TutorialOverlay({ onComplete }) {
+  const t = useT();
+  const STEPS = [
+    { emoji:'🤖', title:'LifeOS', body:'Ваш персональный трекер здоровья. Пройдите краткое обучение.' },
+    { emoji:'📅', title:'История и календарь', body:'Листайте даты стрелками. Зелёная точка = есть данные.' },
+    { emoji:'🍎', title:'Кольца активности', body:'🔴 Активные ккал, 🟢 Калории, 🔵 Вода — настройте цели в профиле.' },
+    { emoji:'🧠', title:'Привычки и Статистика', body:'Трекайте серии без сигарет/алкоголя — найдёте в Профиле.' },
+    { emoji:'📊', title:'Экспорт лога для ИИ', body:'Нажмите «Сгенерировать лог для ИИ» — вставьте в GPT/Claude.' },
+  ];
+  const [step, setStep] = useState(0);
+  const cur = STEPS[step]; const isLast = step === STEPS.length - 1;
+  return (
+    <div className="tutorial-overlay">
+      <div className="tutorial-card">
+        <div style={{ fontSize:56, textAlign:'center', marginBottom:16, lineHeight:1 }}>{cur.emoji}</div>
+        <div style={{ fontSize:21, fontWeight:800, textAlign:'center', marginBottom:12, letterSpacing:'-.5px' }}>{cur.title}</div>
+        <div style={{ fontSize:15, color:'var(--text2)', lineHeight:1.65, textAlign:'center', marginBottom:28 }}>{cur.body}</div>
+        <div style={{ display:'flex', justifyContent:'center', gap:6, marginBottom:24 }}>
+          {STEPS.map((_,i) => <div key={i} className="tutorial-dot" style={{ width: i===step?22:6, background: i===step?'var(--cyan)':'var(--sep)' }} />)}
+        </div>
+        <div style={{ display:'flex', gap:10 }}>
+          <button className="btn btn-secondary" style={{ flex:1 }} onClick={onComplete}>{t('btn_cancel')}</button>
+          <button className="btn btn-primary" style={{ flex:2 }} onClick={() => isLast ? onComplete() : setStep(s=>s+1)}>
+            {isLast ? '🚀 Go!' : 'Далее →'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const Toast = React.memo(function Toast({ msg, onDone }) {
+  useEffect(() => { const ti = setTimeout(onDone, 2400); return () => clearTimeout(ti); }, [onDone]);
+  return <div className="toast">{msg}</div>;
+});
+
+function Toggle({ checked, onChange }) {
+  return (
+    <label className="toggle-wrap">
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
+      <div className="toggle-track" /><div className="toggle-thumb" />
+    </label>
+  );
+}
+function StarRating({ value, onChange }) {
+  return (
+    <div className="stars">
+      {[1,2,3,4,5].map(i => <span key={i} className="star" onClick={() => onChange(i)}>{i<=value?'★':'☆'}</span>)}
+    </div>
+  );
+}
+
+// ─── SVG Icon Library (Lucide-compatible) ────────────────────────
+const Ic = ({ ch, size=22, color='currentColor', sw=1.75, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={style}>
+    {ch}
+  </svg>
+);
+const IcMoon      = (p) => <Ic {...p} ch={<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>}/>;
+const IcZap       = (p) => <Ic {...p} ch={<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>}/>;
+const IcPill      = (p) => <Ic {...p} ch={<><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></>}/>;
+const IcUtensils  = (p) => <Ic {...p} ch={<><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></>}/>;
+const IcDumbbell  = (p) => <Ic {...p} ch={<><path d="M14.4 14.4 9.6 9.6"/><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"/><path d="m21.5 21.5-1.4-1.4"/><path d="M3.9 3.9 2.5 2.5"/><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"/></>}/>;
+const IcRefreshCw = (p) => <Ic {...p} ch={<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></>}/>;
+const IcUser      = (p) => <Ic {...p} ch={<><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>}/>;
+const IcTarget    = (p) => <Ic {...p} ch={<><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>}/>;
+const IcBarChart  = (p) => <Ic {...p} ch={<><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></>}/>;
+const IcSettings  = (p) => <Ic {...p} ch={<><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>}/>;
+const IcSearch    = (p) => <Ic {...p} ch={<><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></>}/>;
+const IcClock     = (p) => <Ic {...p} ch={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}/>;
+const IcCamera    = (p) => <Ic {...p} ch={<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>}/>;
+const IcSparkles  = (p) => <Ic {...p} ch={<><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></>}/>;
+
+// ─── Auth Screen ──────────────────────────────────────────────────
+function AuthScreen() {
+  const [mode,     setMode]     = useState('login');
+  const [email,    setEmail]    = useState('');
+  const [password, setPassword] = useState('');
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState('');
+
+  const handleSubmit = async () => {
+    if (!email || !password) { setError('Введите email и пароль'); return; }
+    setLoading(true); setError('');
+    const { error: e } = mode === 'login'
+      ? await window.supabaseClient.auth.signInWithPassword({ email: email.trim(), password })
+      : await window.supabaseClient.auth.signUp({ email: email.trim(), password });
+    if (e) setError(e.message);
+    setLoading(false);
+  };
+
+  return (
+    <div className="auth-root">
+      <div className="auth-card">
+        <div className="auth-logo">LifeOS</div>
+        <div className="auth-subtitle">Биохакинг-трекер нового поколения</div>
+        {error && <div className="auth-error">{error}</div>}
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          <input className="auth-input" type="email" placeholder="Email"
+            value={email} onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}/>
+          <input className="auth-input" type="password" placeholder="Пароль (мин. 6 символов)"
+            value={password} onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}/>
+          <button className="auth-btn" onClick={handleSubmit} disabled={loading}>
+            {loading ? '…' : mode === 'login' ? 'Войти' : 'Создать аккаунт'}
+          </button>
+        </div>
+        <div className="auth-toggle">
+          {mode === 'login'
+            ? <>Нет аккаунта? <span onClick={() => { setMode('register'); setError(''); }}>Зарегистрироваться</span></>
+            : <>Уже есть аккаунт? <span onClick={() => { setMode('login'); setError(''); }}>Войти</span></>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Auth Gate ──────────────────────────────────────────────────
+function AuthGate() {
+  const [user,        setUser]        = useState(null);
+  const [initialData, setInitialData] = useState(null);
+  const [loading,     setLoading]     = useState(true);
+
+  const loadUserData = async (uid) => {
+    setLoading(true);
+    try {
+      const { data } = await window.supabaseClient
+        .from('user_data')
+        .select('*')
+        .eq('user_id', uid)
+        .single();
+
+      let ud;
+      if (data) {
+        // Merge profile: defaults first, then Supabase data on top
+        // This guarantees xp/level always exist for returning users
+        const profileDefaults = getProfile(); // includes recoveryTemplates + xp/level
+        ud = {
+          logs:         data.logs                                            || {},
+          profile:      { ...profileDefaults, ...(data.profile || {}) },
+          settings:     data.settings                                        || getSettings(),
+          habits:       { ...getHabits(), ...(data.habits || {}) },          // deep merge: add noSugar/noCoffee for old users
+          achievements: data.achievements                                    || {},
+        };
+      } else {
+        // New user — seed with any existing local data, then insert
+        ud = {
+          logs:         getAllLogs(),
+          profile:      getProfile(),
+          settings:     getSettings(),
+          habits:       getHabits(),
+          achievements: getAchievements(),
+        };
+        await window.supabaseClient.from('user_data').insert({ user_id: uid, ...ud });
+      }
+      // Sync Supabase → localStorage so existing helpers keep working
+      setStorage(LOGS_KEY,         ud.logs);
+      setStorage(PROFILE_KEY,      ud.profile);
+      setStorage(SETTINGS_KEY,     ud.settings);
+      setStorage(HABITS_KEY,       ud.habits);
+      setStorage(ACHIEVEMENTS_KEY, ud.achievements);
+      setInitialData(ud);
+    } catch(e) {
+      console.error('[AuthGate] load error:', e);
+      // Graceful fallback: use localStorage (works offline / after network error)
+      setInitialData({
+        logs:         getAllLogs(),
+        profile:      { xp: 0, level: 1, ...getProfile() },
+        settings:     getSettings(),
+        habits:       getHabits(),
+        achievements: getAchievements(),
+      });
+    } finally {
+      // Always unblock the loading screen — no more infinite spinner
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const { data: { subscription } } = window.supabaseClient.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          await loadUserData(session.user.id);
+        } else {
+          setUser(null); setInitialData(null); setLoading(false);
+        }
+      }
+    );
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await window.supabaseClient.auth.signOut();
+  };
+
+  if (loading) return (
+    <div className="auth-root">
+      <div className="auth-card" style={{textAlign:'center'}}>
+        <div className="auth-logo">LifeOS</div>
+        <div className="auth-loading">Загрузка данных…</div>
+      </div>
+    </div>
+  );
+  if (!user || !initialData) return <AuthScreen />;
+  return <App userId={user.id} initialData={initialData} onLogout={handleLogout} />;
+}
+
+function CircleProgress({ value, max, color, size=100, stroke=10, label, sublabel }) {
+  const r=(size-stroke)/2, circ=2*Math.PI*r, dash=Math.min(value/max,1)*circ;
+  return (
+    <div style={{ position:'relative', width:size, height:size, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <svg width={size} height={size} style={{ transform:'rotate(-90deg)', position:'absolute' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--surface2)" strokeWidth={stroke} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{ transition:'stroke-dasharray .5s ease' }} />
+      </svg>
+      <div style={{ textAlign:'center', zIndex:1 }}>
+        <div style={{ fontSize:size*.2, fontWeight:700, lineHeight:1 }}>{label}</div>
+        {sublabel && <div style={{ fontSize:size*.12, color:'var(--text3)', marginTop:2 }}>{sublabel}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Date Navigation ─────────────────────────────────────────────
+function DateNav({ selectedDate, onChange, logs }) {
+  const ribbonRef = useRef(null);
+  const chips = useMemo(() => { const a=[]; for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);a.push(isoDate(d));} return a; }, []);
+  useEffect(() => {
+    if(!ribbonRef.current)return;
+    const idx=chips.indexOf(selectedDate);
+    const chip=ribbonRef.current.children[idx];
+    if(chip) chip.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  }, [selectedDate, chips]);
+  const go=delta=>{const d=new Date(selectedDate+'T12:00:00');d.setDate(d.getDate()+delta);const nd=isoDate(d);if(nd<=TODAY)onChange(nd);};
+  const fmt=iso=>{const d=new Date(iso+'T12:00:00');return{day:d.toLocaleDateString('ru-RU',{weekday:'short'}).slice(0,2).toUpperCase(),num:d.getDate()};};
+  return (
+    <div className="date-nav">
+      <div className="date-arrow" onClick={()=>go(-1)}>‹</div>
+      <div className="date-ribbon" ref={ribbonRef}>
+        {chips.map(iso=>{const{day,num}=fmt(iso);const active=iso===selectedDate;const hasData=!!logs[iso];return(
+          <div key={iso} className={`date-chip${active?' active':''}${hasData?' has-data':''}`} onClick={()=>onChange(iso)}>
+            <div className="dc-day">{day}</div><div className="dc-num">{num}</div>
+            {hasData&&!active&&<div className="dc-dot"/>}
+          </div>
+        );})}
+      </div>
+      <div className="date-arrow" onClick={()=>go(1)} style={{opacity:selectedDate>=TODAY?.3:1}}>›</div>
+    </div>
+  );
+}
+
+// ─── Fitness Rings ────────────────────────────────────────────────
+function MiniRing({ value, max, color, size=60, stroke=7 }) {
+  const r=(size-stroke)/2, circ=2*Math.PI*r, dash=Math.min(value/Math.max(max,.001),1)*circ;
+  return (
+    <svg width={size} height={size} style={{display:'block'}}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--surface3)" strokeWidth={stroke}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+        transform={`rotate(-90 ${size/2} ${size/2})`} style={{transition:'stroke-dasharray .5s ease'}}/>
+    </svg>
+  );
+}
+
+function FitnessRings({ dayData, profile }) {
+  const t = useT();
+  const goalKcal=parseFloat(profile.goalKcal)||500, goalWaterL=parseFloat(profile.goalWaterL)||3, goalCal=parseFloat(profile.goalCalories)||2000;
+  const activeKcal=parseFloat(dayData.activity.activeKcal)||0;
+  const waterL=(dayData.nutrition.waterMl||0)/1000;
+  const totalKcal=dayData.nutrition.meals.reduce((s,m)=>s+(+m.kcal||0),0);
+  const rings=[
+    {label:t('nav_activity'),val:activeKcal,max:goalKcal,color:'#FF453A',valStr:activeKcal+' кк',maxStr:`из ${goalKcal} кк`},
+    {label:t('nav_nutrition'),val:totalKcal,max:goalCal,color:'#30D158',valStr:totalKcal+' кк',maxStr:`из ${goalCal} кк`},
+    {label:t('nav_sleep').replace('Сон','Вода').replace('Sleep','Water').replace('Sueño','Agua').replace('Sono','Água'),val:waterL,max:goalWaterL,color:'var(--cyan)',valStr:waterL.toFixed(1)+' л',maxStr:`из ${goalWaterL} л`},
+  ];
+  return (
+    <div className="rings-widget">
+      {rings.map(r=>(
+        <div key={r.label} className="ring-item">
+          <MiniRing value={r.val} max={r.max} color={r.color} size={58} stroke={6}/>
+          <div style={{fontSize:10,fontWeight:600,color:'var(--text3)',textAlign:'center'}}>{r.label}</div>
+          <div style={{fontSize:11,fontWeight:700,color:r.color}}>{r.valStr}</div>
+          <div style={{fontSize:9,color:'var(--text3)'}}>{r.maxStr}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Barcode Scanner ─────────────────────────────────────────────
+function XPBar({ xp }) {
+  const { level, xpInLevel, xpForNext } = computeXPLevel(xp);
+  const pct = Math.min(xpInLevel / xpForNext * 100, 100).toFixed(1);
+  const rank = getCyberRank(level);
+  return (
+    <div className="xp-widget">
+      <div className="xp-level-badge">УР {level}</div>
+      <div className="xp-rank">{rank}</div>
+      <div className="xp-bar-track">
+        <div className="xp-bar-fill" style={{width:`${pct}%`}}/>
+      </div>
+      <div className="xp-nums">{xpInLevel}<span style={{color:'var(--surface3)',fontWeight:400}}>/{xpForNext}</span> Опыт</div>
+    </div>
+  );
+}
+
+// ─── Photo Diary Card ───────────────────────────────────────────────
+function PhotoDiaryCard({ photoUrl, userId, selectedDate, onUpload }) {
+  const [uploading, setUploading] = useState(false);
+  const [collapsed, setCollapsed] = useState(!photoUrl);
+  const fileRef = useRef(null);
+
+  // Auto-expand when a photo arrives (e.g. on date change)
+  useEffect(() => { setCollapsed(!photoUrl); }, [selectedDate]);
+
+  const handleFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !userId) return;
+    setUploading(true);
+    try {
+      const path = `${userId}/${selectedDate}`;
+      const { error: upErr } = await window.supabaseClient.storage
+        .from('photos')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: urlData } = window.supabaseClient.storage
+        .from('photos')
+        .getPublicUrl(path);
+      // Cache-bust so a replaced image loads fresh
+      onUpload(urlData.publicUrl + '?t=' + Date.now());
+      setCollapsed(false);
+    } catch(err) {
+      console.error('[PhotoDiary] upload error:', err);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await window.supabaseClient.storage
+        .from('photos')
+        .remove([`${userId}/${selectedDate}`]);
+    } catch(e) { /* non-fatal */ }
+    onUpload(null);
+    setCollapsed(true);
+  };
+
+  return (
+    <div className="photo-diary-card">
+      <div className="photo-diary-header">
+        <div className="photo-diary-title">
+          <IcCamera size={13} color="var(--cyan)"/>
+          <span>Фото формы</span>
+        </div>
+        {!collapsed && !photoUrl && (
+          <button onClick={() => setCollapsed(true)}
+            style={{background:'none',border:'none',color:'var(--text3)',fontSize:16,cursor:'pointer',padding:'0 2px',lineHeight:1}}>×</button>
+        )}
+        {collapsed && (
+          <button onClick={() => { setCollapsed(false); if (!photoUrl) fileRef.current?.click(); }}
+            className="btn btn-sm btn-secondary" style={{fontSize:11,padding:'4px 10px'}}>
+            {photoUrl ? 'Показать' : 'Добавить'}
+          </button>
+        )}
+      </div>
+
+      {!collapsed && (
+        photoUrl ? (
+          <div className="photo-diary-img-wrap">
+            <img src={photoUrl} className="photo-diary-img" alt="Фото формы"/>
+            <div className="photo-diary-overlay"/>
+            <div className="photo-diary-actions">
+              <button className="photo-action-btn" disabled={uploading}
+                onClick={() => fileRef.current?.click()}>
+                {uploading ? <span className="spinner"/> : <IcCamera size={13}/>}
+                {uploading ? 'Синхронизация...' : 'Заменить'}
+              </button>
+              <button className="photo-action-btn photo-delete-btn" onClick={handleDelete}
+                disabled={uploading} title="Удалить">✕</button>
+            </div>
+          </div>
+        ) : (
+          <button className="photo-upload-btn" disabled={uploading}
+            onClick={() => fileRef.current?.click()}>
+            {uploading
+              ? <><span className="spinner"/> Синхронизация...</>
+              : <><IcCamera size={18}/> Добавить фото дня</>
+            }
+          </button>
+        )
+      )}
+
+      <input ref={fileRef} type="file" accept="image/*" capture="environment"
+        style={{display:'none'}} onChange={handleFile}/>
+    </div>
+  );
+}
+
+// BarcodeScanner uses a `scanKey` prop so the parent can force-remount on retry
+function BarcodeScannerInner({ onResult, onClose }) {
+  const t = useT();
+  const videoRef=useRef(null),streamRef=useRef(null),activeRef=useRef(true);
+  const [status,setStatus]=useState(t('scan_init'));
+  const [supported,setSupported]=useState(true);
+  const [timedOut,setTimedOut]=useState(false);
+  const timeoutRef=useRef(null);
+  const stopCamera=()=>{if(streamRef.current){streamRef.current.getTracks().forEach(tk=>tk.stop());streamRef.current=null;}};
+  useEffect(()=>{
+    activeRef.current=true;
+    if(!('BarcodeDetector' in window)){setSupported(false);setStatus(t('scan_no_support'));return;}
+    (async()=>{
+      try{
+        const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}}});
+        streamRef.current=stream;
+        if(videoRef.current){videoRef.current.srcObject=stream;await videoRef.current.play();}
+        setStatus(t('scan_place'));
+        const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39']});
+        timeoutRef.current=setTimeout(()=>{if(activeRef.current){activeRef.current=false;stopCamera();setTimedOut(true);}},15000);
+        const scan=async()=>{
+          if(!activeRef.current)return;
+          if(videoRef.current&&videoRef.current.readyState>=2){
+            try{const codes=await detector.detect(videoRef.current);if(codes.length>0){clearTimeout(timeoutRef.current);stopCamera();onResult(codes[0].rawValue);return;}}catch(e){}
+          }
+          if(activeRef.current)requestAnimationFrame(scan);
+        };
+        requestAnimationFrame(scan);
+      }catch(e){setStatus(t('scan_no_camera'));setTimedOut(true);}
+    })();
+    return()=>{activeRef.current=false;clearTimeout(timeoutRef.current);stopCamera();};
+  },[]);
+  const handleClose=()=>{activeRef.current=false;stopCamera();onClose();};
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&handleClose()}>
+      {timedOut ? (
+        <div className="modal-sheet">
+          <div className="modal-handle"/>
+          <div style={{textAlign:'center',marginBottom:20}}>
+            <div style={{fontSize:48,marginBottom:12}}>{t('scan_timeout')}</div>
+            <div style={{fontSize:18,fontWeight:700,marginBottom:8}}>{t('scan_not_found')}</div>
+            <div style={{fontSize:14,color:'var(--text3)',lineHeight:1.5}}>{t('scan_manually')}</div>
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            <button className="btn btn-secondary" style={{flex:1}} onClick={handleClose}>{t('scan_manual_btn')}</button>
+            <button className="btn btn-primary" style={{flex:1}} onClick={()=>onClose('retry')}>{t('scan_retry')}</button>
+          </div>
+        </div>
+      ) : (
+        <div className="modal-sheet" style={{padding:0,overflow:'hidden'}}>
+          <div style={{position:'relative',background:'#000',width:'100%',minHeight:280,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            {supported?<><video ref={videoRef} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} playsInline muted/><div style={{position:'relative',zIndex:2}}><div className="scanner-frame"><div className="scanner-line"/></div></div></>:<div style={{color:'#fff',textAlign:'center',padding:28,fontSize:15}}>{status}</div>}
+          </div>
+          <div style={{padding:'10px 20px 0',background:'var(--surface)'}}><div className="scanner-timeout-bar"/></div>
+          <div style={{padding:'12px 20px calc(20px + env(safe-area-inset-bottom,0px))',background:'var(--surface)'}}>
+            {supported&&<div style={{textAlign:'center',fontSize:14,color:'var(--text3)',marginBottom:14}}>{status}</div>}
+            <button className="btn btn-secondary btn-full" onClick={handleClose}>{t('scan_cancel')}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// Wrapper that re-mounts the scanner on retry by bumping scanKey
+function BarcodeScanner({ onResult, onClose }) {
+  const [scanKey, setScanKey] = useState(0);
+  const handleClose = (reason) => {
+    if (reason === 'retry') { setScanKey(k => k + 1); }
+    else { onClose(); }
+  };
+  return <BarcodeScannerInner key={scanKey} onResult={onResult} onClose={handleClose} />;
+}
+
+// ─── Settings Screen ──────────────────────────────────────────────
+function SettingsScreen({ settings, onSettingsChange, onLogout }) {
+  const t = useT();
+  const LANGS = [
+    { code:'ru', flag:'🇷🇺', name:'Русский' },
+    { code:'en', flag:'🇺🇸', name:'English' },
+    { code:'es', flag:'🇪🇸', name:'Español' },
+    { code:'pt', flag:'🇧🇷', name:'Português' },
+  ];
+  const NAV_DEFS = [
+    { id:'sleep',     Icon: IcMoon,      key:'nav_sleep'     },
+    { id:'activity',  Icon: IcZap,       key:'nav_activity'  },
+    { id:'supps',     Icon: IcPill,      key:'nav_supps'     },
+    { id:'nutrition', Icon: IcUtensils,  key:'nav_nutrition' },
+    { id:'workout',   Icon: IcDumbbell,  key:'nav_workout'   },
+    { id:'recovery',  Icon: IcRefreshCw, key:'nav_recovery'  },
+  ];
+  const visibleCount = Object.values(settings.visibleTabs).filter(Boolean).length;
+
+  const toggleTab = (id) => {
+    const cur = settings.visibleTabs[id] !== false;
+    if (cur && visibleCount <= 2) return; // keep at least 2
+    const updated = { ...settings, visibleTabs: { ...settings.visibleTabs, [id]: !cur } };
+    onSettingsChange(updated);
+    saveSettings(updated);
+  };
+
+  const setLang = (code) => {
+    const updated = { ...settings, lang: code };
+    onSettingsChange(updated);
+    saveSettings(updated);
+  };
+
+  return (
+    <div className="screen-content fade-up">
+      <div className="section-title">{t('settings_title')}</div>
+
+      {/* Language */}
+      <div className="section-group-title">{t('language')}</div>
+      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        {LANGS.map(l => (
+          <button key={l.code} className={`lang-option${settings.lang===l.code?' active':''}`} onClick={() => setLang(l.code)}>
+            <span className="lang-flag">{l.flag}</span>
+            <span className="lang-name">{l.name}</span>
+            {settings.lang === l.code && <span className="lang-check">✓</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab visibility */}
+      <div className="section-group-title" style={{ marginTop:8 }}>{t('visible_tabs')}</div>
+      <div className="card">
+        <div style={{ fontSize:12, color:'var(--text3)', marginBottom:14, lineHeight:1.5 }}>{t('visible_tabs_hint')}</div>
+        {NAV_DEFS.map(tab => {
+          const isVisible = settings.visibleTabs[tab.id] !== false;
+          const isLast = isVisible && visibleCount <= 2;
+          return (
+            <div key={tab.id} className="tab-visibility-row" style={{ opacity: isLast && isVisible ? .5 : 1 }}>
+              <div style={{ width:36, height:36, borderRadius:10, background: isVisible ? 'rgba(0,229,255,.12)' : 'var(--surface2)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background .2s' }}>
+                <tab.Icon size={18} color={isVisible ? 'var(--cyan)' : 'var(--text3)'}/>
+              </div>
+              <div style={{ flex:1, fontSize:15, fontWeight:600, color: isVisible ? 'var(--text)' : 'var(--text3)' }}>
+                {t(tab.key)}
+              </div>
+              <Toggle checked={isVisible} onChange={() => toggleTab(tab.id)} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Logout */}
+      {onLogout && (
+        <button className="logout-btn" style={{marginTop:12}} onClick={onLogout}>
+          Выйти из аккаунта
+        </button>
+      )}
+
+      {/* Version */}
+      <div style={{ textAlign:'center', fontSize:12, color:'var(--text3)', padding:'8px 0 4px' }}>
+        LifeOS v2.0 · Build 2026
+      </div>
+    </div>
+  );
+}
+
+// ─── Recovery Template Inline Adder ──────────────────────────────
+function AddTemplateInline({ onAdd }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [emoji, setEmoji] = useState('🔄');
+  if (!open) return (
+    <button className="recovery-add-btn" onClick={()=>setOpen(true)}>+ Добавить ритуал</button>
+  );
+  return (
+    <div style={{background:'var(--surface2)',borderRadius:12,padding:12,marginTop:8}}>
+      <div style={{display:'flex',gap:8,marginBottom:8}}>
+        <input className="input" style={{width:52,textAlign:'center',fontSize:22,padding:'6px',flexShrink:0}}
+          placeholder="🔄" value={emoji} onChange={e=>setEmoji(e.target.value)}/>
+        <input className="input" placeholder="Ледяная ванна..." value={name} onChange={e=>setName(e.target.value)}/>
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <button className="btn btn-secondary btn-sm" style={{flex:1}}
+          onClick={()=>{setOpen(false);setName('');setEmoji('🔄');}}>Отмена</button>
+        <button className="btn btn-primary btn-sm" style={{flex:2}} onClick={()=>{
+          if(!name.trim())return;
+          onAdd({id:String(Date.now()),name:name.trim(),emoji:emoji.trim()||'🔄'});
+          setName('');setEmoji('🔄');setOpen(false);
+        }}>Добавить</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Profile Modal ────────────────────────────────────────────────
+function ProfileModal({ onClose, status, habits, setHabits, logs, settings, onSettingsChange, onLogout, xp }) {
+  const t = useT();
+  const [profileTab,   setProfileTab]   = useState('profile');
+  const [profile,      setProfile]      = useState(getProfile);
+  const [goalsUpdated, setGoalsUpdated] = useState(false);
+  const [autoCalc,     setAutoCalc]     = useState(() => calcAutoGoals(getProfile().weight, getProfile().inbody.bodyFat, getProfile().goal));
+  const avatarRef  = useRef(null);
+  const goalsTimer = useRef(null);
+
+  useEffect(() => { setStorage(PROFILE_KEY, profile); }, [profile]);
+
+  useEffect(() => {
+    const result = calcAutoGoals(profile.weight, profile.inbody.bodyFat, profile.goal);
+    if (result) {
+      setAutoCalc(result);
+      setProfile(p => ({ ...p, goalCalories: result.goalCalories, goalWaterL: result.goalWaterL, goalKcal: result.goalKcal }));
+      setGoalsUpdated(true);
+      clearTimeout(goalsTimer.current);
+      goalsTimer.current = setTimeout(() => setGoalsUpdated(false), 2800);
+    } else { setAutoCalc(null); }
+    return () => clearTimeout(goalsTimer.current);
+  }, [profile.weight, profile.inbody.bodyFat, profile.goal]);
+
+  const set   = (f, v) => setProfile(p => ({ ...p, [f]: v }));
+  const setIB = (f, v) => setProfile(p => ({ ...p, inbody: { ...p.inbody, [f]: v } }));
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => set('avatar', ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const h=parseFloat(profile.height), w=parseFloat(profile.weight);
+  const bmi=h&&w?(w/Math.pow(h/100,2)).toFixed(1):null;
+  const bmiColor=!bmi?'var(--cyan)':bmi<18.5||bmi>=30?'var(--pink)':bmi<25?'var(--lime)':'var(--orange)';
+  const bmiLabel=!bmi?'':bmi<18.5?'⚠️ Дефицит':bmi<25?'✓ Норма':bmi<30?'⚠️ Избыток':'🚨 Ожирение';
+
+  const PROFILE_TABS = [
+    { id:'profile',  Icon: IcUser,     key:'tab_profile'  },
+    { id:'habits',   Icon: IcTarget,   key:'tab_habits'   },
+    { id:'stats',    Icon: IcBarChart, key:'tab_stats'    },
+    { id:'settings', Icon: IcSettings, key:'tab_settings' },
+  ];
+
+  return (
+    <div className="profile-screen">
+      <div className="profile-header">
+        <button onClick={onClose} style={{ background:'none', border:'none', color:'var(--cyan)', fontSize:17, fontWeight:600, cursor:'pointer', fontFamily:'inherit', padding:0, minWidth:44, minHeight:44, display:'flex', alignItems:'center' }}>
+          {t('btn_back')}
+        </button>
+        <div style={{ flex:1, textAlign:'center', fontSize:17, fontWeight:700 }}>{t('profile_title')}</div>
+        <div className="avatar-upload-btn" onClick={() => avatarRef.current.click()}>
+          {profile.avatar
+            ? <img src={profile.avatar} style={{ width:44, height:44, borderRadius:'50%', objectFit:'cover', border:'2px solid var(--sep)' }}/>
+            : <div style={{ width:44, height:44, borderRadius:'50%', background:'linear-gradient(135deg,var(--pink),var(--purple))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>🤖</div>
+          }
+          <div className="edit-badge">✏️</div>
+        </div>
+        <input ref={avatarRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleAvatarUpload}/>
+      </div>
+
+      <div className="profile-tab-bar">
+        {PROFILE_TABS.map(pt => {
+          const isActive = profileTab === pt.id;
+          return (
+            <button key={pt.id} className={`profile-tab${isActive?' active':''}`} onClick={() => setProfileTab(pt.id)}>
+              <pt.Icon size={15} color={isActive ? 'var(--cyan)' : 'var(--text3)'}/>
+              {t(pt.key)}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="screen">
+        {profileTab === 'habits'   && <HabitsScreen habits={habits} setHabits={setHabits} showToast={()=>{}} />}
+        {profileTab === 'stats'    && <StatsScreen  logs={logs} habits={habits} showToast={()=>{}} xp={xp} />}
+        {profileTab === 'settings' && <SettingsScreen settings={settings} onSettingsChange={onSettingsChange} onLogout={onLogout}/>}
+        {profileTab !== 'profile'  ? null : (
+          <div className="screen-content fade-up">
+
+            {status && (
+              <div className="status-banner" style={{ background:`linear-gradient(135deg,${status.color}18,${status.color}08)`, border:`1.5px solid ${status.color}44` }}>
+                <div style={{ fontSize:44, lineHeight:1, flexShrink:0 }}>{status.emoji}</div>
+                <div>
+                  <div style={{ fontSize:11, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:2 }}>{t('your_status')}</div>
+                  <div style={{ fontSize:24, fontWeight:900, color:status.color, letterSpacing:'-1px' }}>{status.label}</div>
+                </div>
+              </div>
+            )}
+
+            <div className="section-group-title">{t('personal_data')}</div>
+            <div className="card" style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              {[
+                { key:'name',   label:t('name'),         placeholder:'Терминатор', type:'text'   },
+                { key:'age',    label:t('age'),           placeholder:'30',         type:'number' },
+                { key:'height', label:t('height'),        placeholder:'178',        type:'number' },
+                { key:'weight', label:t('weight_field'),  placeholder:'75.0',       type:'number' },
+              ].map(f => (
+                <div key={f.key}>
+                  <div className="label">{f.label}</div>
+                  <input type={f.type} className="input" placeholder={f.placeholder} value={profile[f.key]||''} onChange={e=>set(f.key,e.target.value)}/>
+                </div>
+              ))}
+              <div>
+                <div className="label">{t('goal_field')}</div>
+                <select className="select-input" value={profile.goal} onChange={e=>set('goal',e.target.value)}>
+                  <option value="">—</option>
+                  <option value="Сушка">{t('goal_cut')}</option>
+                  <option value="Масса">{t('goal_bulk')}</option>
+                  <option value="Поддержание">{t('goal_maintain')}</option>
+                </select>
+              </div>
+              <div>
+                <div className="label">{t('activity_level')}</div>
+                <select className="select-input" value={profile.activityLevel} onChange={e=>set('activityLevel',e.target.value)}>
+                  <option value="">—</option>
+                  <option value="Сидячий">{t('al_sedentary')}</option>
+                  <option value="Умеренный">{t('al_moderate')}</option>
+                  <option value="Активный">{t('al_active')}</option>
+                  <option value="Очень активный">{t('al_very_active')}</option>
+                </select>
+              </div>
+              {bmi && (
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  <div className="pill" style={{ background:'rgba(0,229,255,.12)', color:'var(--cyan)' }}>📊 ИМТ: {bmi}</div>
+                  <div className="pill" style={{ background:'rgba(168,255,62,.12)', color:bmiColor }}>{bmiLabel}</div>
+                  {profile.goal && <div className="pill" style={{ background:'rgba(191,90,242,.12)', color:'var(--purple)' }}>{profile.goal}</div>}
+                </div>
+              )}
+            </div>
+
+            <div className="section-group-title">{t('goals_rings')}</div>
+            {goalsUpdated && (
+              <div className="goals-updated-banner">
+                <span style={{ fontSize:18 }}>✅</span> <span>{t('goals_updated')}</span>
+              </div>
+            )}
+            <div className="card" style={{ display:'flex', flexDirection:'column', gap:14, transition:'box-shadow .4s', boxShadow:goalsUpdated?'0 0 0 2px rgba(168,255,62,.5)':undefined }}>
+              {autoCalc && (
+                <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--lime)', fontWeight:600, padding:'0 0 4px', borderBottom:'1px solid var(--sep)' }}>
+                  <span>⚡</span> {t('auto_calculated')}
+                </div>
+              )}
+              {[
+                { key:'goalKcal',     label:t('active_kcal_goal'), placeholder:'500', ac: autoCalc ? 'rgba(168,255,62,.5)' : undefined },
+                { key:'goalCalories', label:t('cal_goal'),         placeholder:'2000', ac: autoCalc ? 'rgba(168,255,62,.5)' : undefined },
+                { key:'goalWaterL',   label:t('water_goal'),       placeholder:'3',    ac: autoCalc ? 'rgba(0,229,255,.5)'   : undefined, step:'0.1' },
+              ].map(f => (
+                <div key={f.key}>
+                  <div className="label">{f.label}</div>
+                  <input type="number" step={f.step} className="input" placeholder={f.placeholder}
+                    value={profile[f.key]} onChange={e=>set(f.key,e.target.value)}
+                    style={{ borderColor: f.ac }}/>
+                </div>
+              ))}
+            </div>
+
+            <div className="section-group-title">{t('inbody_title')}</div>
+            <div className="inbody-card">
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                <div style={{ width:48, height:48, borderRadius:14, background:'linear-gradient(135deg,rgba(0,229,255,.18),rgba(191,90,242,.18))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>🧬</div>
+                <div>
+                  <div style={{ fontSize:16, fontWeight:700 }}>{t('inbody_subtitle')}</div>
+                  <div style={{ fontSize:12, color:'var(--text3)' }}>InBody / Bioimpedance</div>
+                </div>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+                {[
+                  { key:'muscleMass', label:t('muscle_mass'),     unit:'кг', placeholder:'35.0' },
+                  { key:'bodyFat',    label:t('body_fat'),         unit:'%',  placeholder:'15.0' },
+                  { key:'totalWater', label:t('total_water_field'), unit:'л',  placeholder:'40.0' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <div className="label">{f.label}</div>
+                    <div className="inbody-input-wrap">
+                      <input type="number" step="0.1" className="input inbody-input" placeholder={f.placeholder}
+                        value={profile.inbody[f.key]} onChange={e=>setIB(f.key,e.target.value)}/>
+                      <span className="inbody-unit">{f.unit}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {(profile.inbody.muscleMass||profile.inbody.bodyFat||profile.inbody.totalWater) && (
+                <div style={{ display:'flex', gap:8, marginTop:16 }}>
+                  {profile.inbody.muscleMass && <div className="inbody-stat" style={{background:'rgba(168,255,62,.1)'}}><div style={{fontSize:20,fontWeight:800,color:'var(--lime)'}}>{profile.inbody.muscleMass}</div><div style={{fontSize:10,color:'var(--text3)'}}>{t('kg_muscle')}</div></div>}
+                  {profile.inbody.bodyFat    && <div className="inbody-stat" style={{background:'rgba(255,45,120,.1)'}}><div style={{fontSize:20,fontWeight:800,color:'var(--pink)'}}>{profile.inbody.bodyFat}%</div><div style={{fontSize:10,color:'var(--text3)'}}>{t('pct_fat')}</div></div>}
+                  {profile.inbody.totalWater && <div className="inbody-stat" style={{background:'rgba(0,229,255,.1)'}}><div style={{fontSize:20,fontWeight:800,color:'var(--cyan)'}}>{profile.inbody.totalWater}л</div><div style={{fontSize:10,color:'var(--text3)'}}>{t('liters_water')}</div></div>}
+                </div>
+              )}
+              {autoCalc && (
+                <div className="metabolism-card">
+                  <div style={{ fontSize:11, fontWeight:700, color:'var(--lime)', textTransform:'uppercase', letterSpacing:'.4px', marginBottom:12 }}>{t('metabolism_title')}</div>
+                  <div style={{ display:'flex', gap:8 }}>
+                    {[{val:autoCalc.bmr,label:t('bmr_label'),sub:t('kcal_day'),color:'var(--lime)'},{val:autoCalc.tdee,label:t('tdee_label'),sub:t('expense_day'),color:'var(--cyan)'},{val:autoCalc.goalCalories,label:t('target_label'),sub:t('kcal_day'),color:'var(--orange)'}].map(m=>(
+                      <div key={m.label} style={{flex:1,textAlign:'center'}}>
+                        <div style={{fontSize:20,fontWeight:900,color:m.color,letterSpacing:'-1px'}}>{m.val}</div>
+                        <div style={{fontSize:10,color:'var(--text3)',marginTop:2,fontWeight:600}}>{m.label}</div>
+                        <div style={{fontSize:9,color:'var(--text3)'}}>{m.sub}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop:10, fontSize:11, color:'var(--text3)', textAlign:'center', fontWeight:500, lineHeight:1.5 }}>
+                    {profile.goal==='Сушка'?t('mode_cut'):profile.goal==='Масса'?t('mode_bulk'):profile.goal==='Поддержание'?t('mode_maintain'):t('mode_select')}
+                  </div>
+                  <div style={{ marginTop:8, fontSize:11, color:'var(--text3)', textAlign:'center' }}>
+                    {t('lbm_label')}: <strong style={{color:'var(--lime)'}}>{autoCalc.lbm} кг</strong>
+                    &nbsp;·&nbsp;{t('nav_recovery').includes('Восст')?'Вода':'Water'}: <strong style={{color:'var(--cyan)'}}>{autoCalc.goalWaterL} {t('water_day')}</strong>
+                  </div>
+                </div>
+              )}
+            </div>{/* end inbody-card */}
+
+            <div className="section-group-title" style={{marginTop:4}}>{t('recovery_constructor')}</div>
+            <div className="card">
+              <div style={{fontSize:12,color:'var(--text3)',marginBottom:10,lineHeight:1.6}}>
+                Создай личные ритуалы — они появятся на вкладке «Восстановление»
+              </div>
+              {(profile.recoveryTemplates||[]).map((tmpl,idx)=>(
+                <div key={tmpl.id} className="recovery-template-row">
+                  <span style={{fontSize:22,width:34,textAlign:'center',flexShrink:0}}>{tmpl.emoji}</span>
+                  <span style={{flex:1,fontSize:15,fontWeight:500,color:'var(--text)'}}>{tmpl.name}</span>
+                  <button
+                    onClick={()=>setProfile(p=>({...p,recoveryTemplates:p.recoveryTemplates.filter((_,i)=>i!==idx)}))}
+                    style={{background:'none',border:'none',color:'var(--text3)',fontSize:18,cursor:'pointer',padding:'0 4px'}}>✕</button>
+                </div>
+              ))}
+              <AddTemplateInline onAdd={tmpl=>setProfile(p=>({...p,recoveryTemplates:[...(p.recoveryTemplates||[]),tmpl]}))}/>
+            </div>
+
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Header ──────────────────────────────────────────────────────
+const Header = React.memo(function Header({ selectedDate, onProfileOpen, userName, avatarSrc, status, onExport, exporting }) {
+  const t = useT();
+  const d = new Date(selectedDate+'T12:00:00');
+  const dateStr = d.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});
+  const isToday = selectedDate === TODAY;
+  return (
+    <div className="app-header">
+      <div className="header-row">
+        <div style={{ flex:1, minWidth:0 }}>
+          <div className="app-logo">
+            LifeOS
+          </div>
+          <div className="header-greeting">
+            <span style={{ textTransform:'capitalize' }}>
+              {userName ? <><strong>{t('hello')} {userName}!</strong>&nbsp;·&nbsp;</> : null}
+              {isToday ? t('today') : dateStr}
+            </span>
+            {status && (
+              <span className="status-pill" style={{ background:`${status.color}22`, color:status.color }}>
+                {status.emoji} {status.label}
+              </span>
+            )}
+          </div>
+        </div>
+        <button className="ai-btn" onClick={onExport} disabled={exporting} aria-label="Сгенерировать лог для ИИ" title="Сгенерировать лог для ИИ">
+          <IcSparkles size={17} color="var(--cyan)" sw={1.8}/>
+        </button>
+        <button className="avatar-btn" onClick={onProfileOpen} aria-label="Profile" style={{ marginLeft:8 }}>
+          {avatarSrc ? <img src={avatarSrc} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }}/> : '🤖'}
+        </button>
+      </div>
+    </div>
+  );
+});
+
+// ─── Bottom Nav ──────────────────────────────────────────────────
+const NAV_DEFS = [
+  { id:'sleep',     Icon: IcMoon,      key:'nav_sleep'     },
+  { id:'activity',  Icon: IcZap,       key:'nav_activity'  },
+  { id:'supps',     Icon: IcPill,      key:'nav_supps'     },
+  { id:'nutrition', Icon: IcUtensils,  key:'nav_nutrition' },
+  { id:'workout',   Icon: IcDumbbell,  key:'nav_workout'   },
+  { id:'recovery',  Icon: IcRefreshCw, key:'nav_recovery'  },
+];
+
+function BottomNav({ active, onChange, visibleTabs }) {
+  const t = useT();
+  const visible = NAV_DEFS.filter(n => visibleTabs[n.id] !== false);
+  return (
+    <nav className="bottom-nav">
+      {visible.map(n => {
+        const isActive = active === n.id;
+        return (
+          <div key={n.id} className={`nav-item${isActive?' active':''}`} onClick={() => onChange(n.id)}>
+            <div className="nav-icon">
+              <n.Icon size={22} color={isActive ? 'var(--cyan)' : 'var(--text3)'} sw={isActive ? 2 : 1.6}/>
+            </div>
+            <div className="nav-label">{t(n.key)}</div>
+            <div className="nav-dot"/>
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
+
+// ─── Screen 1: Sleep ─────────────────────────────────────────────
+const SleepScreen = React.memo(function SleepScreen({ state, update }) {
+  const t = useT();
+  const { sleep, energy } = state;
+  const energyColor = energy>=8?'var(--lime)':energy>=5?'var(--cyan)':'var(--pink)';
+  const readiness = Math.min(100, Math.round((sleep.quality/5*40)+(energy/10*40)+(Math.min(sleep.hours,9)/9*20)));
+  return (
+    <div className="screen-content fade-up">
+      <div className="section-title">{t('sleep_title')}</div>
+      <div className="card" style={{ display:'flex', alignItems:'center', gap:20 }}>
+        <CircleProgress value={readiness} max={100}
+          color={readiness>=70?'var(--lime)':readiness>=50?'var(--cyan)':'var(--pink)'}
+          size={100} stroke={10} label={readiness+'%'} sublabel={t('sleep_readiness')}/>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:22, fontWeight:700, color:readiness>=70?'var(--lime)':readiness>=50?'var(--cyan)':'var(--pink)' }}>
+            {readiness>=80?'Отлично':readiness>=60?'Хорошо':readiness>=40?'Средне':'Плохо'}
+          </div>
+          <div style={{ fontSize:13, color:'var(--text3)', marginTop:4 }}>{sleep.hours}ч · {sleep.quality}/5 · {energy}/10</div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="label">{t('sleep_hours')}</div>
+        <div className="stepper" style={{ marginTop:8 }}>
+          <button className="stepper-btn" onClick={()=>update('sleep',{...sleep,hours:Math.max(0,sleep.hours-.5)})}>−</button>
+          <div className="stepper-val">{sleep.hours}<span style={{fontSize:14,color:'var(--text3)',fontWeight:400}}>ч</span></div>
+          <button className="stepper-btn" onClick={()=>update('sleep',{...sleep,hours:Math.min(24,sleep.hours+.5)})}>+</button>
+        </div>
+        <div style={{ marginTop:14 }}>
+          <div className="progress-bar-bg"><div className="progress-bar-fill" style={{width:`${Math.min(sleep.hours/10*100,100)}%`,background:'linear-gradient(90deg,var(--cyan),var(--lime))'}}/></div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="label">{t('sleep_quality')}</div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:8 }}>
+          <StarRating value={sleep.quality} onChange={v=>update('sleep',{...sleep,quality:v})}/>
+          <div style={{ fontSize:16, fontWeight:600, color:sleep.quality>=4?'var(--lime)':sleep.quality>=3?'var(--cyan)':'var(--pink)' }}>
+            {['','Ужасно','Плохо','Средне','Хорошо','Отлично'][sleep.quality]}
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+          <div className="label" style={{marginBottom:0}}>{t('energy_label')}</div>
+          <div style={{ fontSize:24, fontWeight:800, color:energyColor }}>{energy}/10</div>
+        </div>
+        <input type="range" className="slider" min="1" max="10" value={energy}
+          onChange={e=>update('energy',+e.target.value)}
+          style={{background:`linear-gradient(to right,var(--pink),var(--cyan) ${(energy-1)/9*100}%,var(--surface2) ${(energy-1)/9*100}%)`}}/>
+      </div>
+    </div>
+  );
+});
+
+// ─── Screen 2: Activity ──────────────────────────────────────────
+const ActivityScreen = React.memo(function ActivityScreen({ state, update }) {
+  const t = useT();
+  const { activity, weight } = state;
+  const profile = getProfile();
+  const heightCm = parseFloat(profile.height)||178;
+  return (
+    <div className="screen-content fade-up">
+      <div className="section-title">{t('activity_title')}</div>
+      <div className="grid-2">
+        <div className="stat-card">
+          <div style={{fontSize:28}}>🔥</div>
+          <div className="stat-val" style={{color:'var(--orange)'}}>{activity.activeKcal||'—'}</div>
+          <div className="stat-unit">{t('active_kcal')}</div>
+          <input type="number" className="input" style={{marginTop:10,fontSize:14}} placeholder="0" value={activity.activeKcal} onChange={e=>update('activity',{...activity,activeKcal:e.target.value})}/>
+        </div>
+        <div className="stat-card">
+          <div style={{fontSize:28}}>❤️</div>
+          <div className="stat-val" style={{color:'var(--pink)'}}>{activity.avgHR||'—'}</div>
+          <div className="stat-unit">{t('avg_hr')}</div>
+          <input type="number" className="input" style={{marginTop:10,fontSize:14}} placeholder="уд/мин" value={activity.avgHR} onChange={e=>update('activity',{...activity,avgHR:e.target.value})}/>
+        </div>
+      </div>
+      <div className="card">
+        <div className="label">{t('morning_weight')}</div>
+        <div style={{ display:'flex', alignItems:'baseline', gap:8, marginTop:8 }}>
+          <input type="number" step="0.1" className="input" placeholder="70.5" value={weight} onChange={e=>update('weight',e.target.value)} style={{fontSize:28,fontWeight:700,textAlign:'center',height:56}}/>
+          <div style={{ fontSize:20, fontWeight:600, color:'var(--text3)', whiteSpace:'nowrap' }}>кг</div>
+        </div>
+        {weight && <div style={{marginTop:10}}><div className="pill" style={{background:'rgba(0,229,255,.12)',color:'var(--cyan)'}}>📊 ИМТ ~{(weight/Math.pow(heightCm/100,2)).toFixed(1)}</div></div>}
+      </div>
+      {(activity.activeKcal||activity.avgHR) && (
+        <div className="card" style={{background:'linear-gradient(135deg,rgba(168,255,62,.08),rgba(0,229,255,.08))'}}>
+          <div className="label">{t('activity_summary')}</div>
+          <div style={{display:'flex',justifyContent:'space-around',marginTop:10}}>
+            {activity.activeKcal && <div style={{textAlign:'center'}}><div style={{fontSize:26,fontWeight:800,color:'var(--lime)'}}>{activity.activeKcal}</div><div style={{fontSize:11,color:'var(--text3)'}}>{t('kcal_burned')}</div></div>}
+            {activity.avgHR && <div style={{textAlign:'center'}}><div style={{fontSize:26,fontWeight:800,color:'var(--pink)'}}>{activity.avgHR}</div><div style={{fontSize:11,color:'var(--text3)'}}>{t('bpm_avg')}</div></div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ─── Screen 3: Supplements ───────────────────────────────────────
+const SupplementsScreen = React.memo(function SupplementsScreen({ state, update }) {
+  const t = useT();
+  const { supplements } = state;
+  const [showAdd, setShowAdd] = useState(null);
+  const [newName, setNewName] = useState('');
+  const [newDose, setNewDose] = useState('');
+  const nextId = useRef(Date.now());
+  const toggleCheck=(period,id)=>update('supplements',{...supplements,[period]:supplements[period].map(s=>s.id===id?{...s,checked:!s.checked}:s)});
+  const addItem=()=>{if(!newName.trim())return;update('supplements',{...supplements,[showAdd]:[...supplements[showAdd],{id:nextId.current++,name:newName.trim(),dose:newDose.trim(),checked:false}]});setNewName('');setNewDose('');setShowAdd(null);};
+  const removeItem=(period,id)=>update('supplements',{...supplements,[period]:supplements[period].filter(s=>s.id!==id)});
+  const PERIODS=[{key:'morning',label:t('period_morning')},{key:'day',label:t('period_day')},{key:'evening',label:t('period_evening')}];
+  const total=Object.values(supplements).flat().length, done=Object.values(supplements).flat().filter(s=>s.checked).length;
+  return (
+    <div className="screen-content fade-up">
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div className="section-title">{t('supps_title')}</div>
+        <div className="pill" style={{background:done===total?'rgba(168,255,62,.15)':'rgba(0,229,255,.12)',color:done===total?'var(--lime)':'var(--cyan)'}}>{done}/{total}</div>
+      </div>
+      <div className="card card-sm">
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:6,fontSize:13,color:'var(--text3)'}}><span>{t('done_today')}</span><span>{Math.round(done/total*100)||0}%</span></div>
+        <div className="progress-bar-bg"><div className="progress-bar-fill" style={{width:`${Math.round(done/total*100)||0}%`,background:'linear-gradient(90deg,var(--cyan),var(--lime))'}}/></div>
+      </div>
+      {PERIODS.map(({key,label})=>(
+        <div key={key} className="card">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+            <div style={{fontSize:16,fontWeight:700}}>{label}</div>
+            <button className="btn btn-sm btn-secondary" onClick={()=>setShowAdd(key)}>{t('btn_add')}</button>
+          </div>
+          {supplements[key].map(item=>(
+            <div key={item.id} className="supp-item">
+              <div className={`supp-check${item.checked?' checked':''}`} onClick={()=>toggleCheck(key,item.id)}>
+                {item.checked&&<span style={{color:'#fff',fontSize:14,fontWeight:700}}>✓</span>}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:15,fontWeight:500,textDecoration:item.checked?'line-through':'none',color:item.checked?'var(--text3)':'var(--text)'}}>{item.name}</div>
+                {item.dose&&<div style={{fontSize:12,color:'var(--text3)'}}>{item.dose}</div>}
+              </div>
+              <button onClick={()=>removeItem(key,item.id)} style={{background:'none',border:'none',color:'var(--text3)',fontSize:18,cursor:'pointer',padding:'0 4px'}}>✕</button>
+            </div>
+          ))}
+          {supplements[key].length===0&&<div style={{textAlign:'center',color:'var(--text3)',fontSize:14,padding:'16px 0'}}>{t('supps_empty')}</div>}
+        </div>
+      ))}
+      {showAdd&&(
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowAdd(null)}>
+          <div className="modal-sheet">
+            <div className="modal-handle"/>
+            <div style={{fontSize:18,fontWeight:700,marginBottom:16}}>{t('supps_add_title')}</div>
+            <div style={{marginBottom:10}}><div className="label">{t('supps_name')}</div><input className="input" placeholder="Витамин D3, Берберин..." value={newName} onChange={e=>setNewName(e.target.value)} autoFocus/></div>
+            <div style={{marginBottom:20}}><div className="label">{t('supps_dose')}</div><input className="input" placeholder="500мг, 2 капсулы..." value={newDose} onChange={e=>setNewDose(e.target.value)}/></div>
+            <div style={{display:'flex',gap:10}}>
+              <button className="btn btn-secondary" style={{flex:1}} onClick={()=>setShowAdd(null)}>{t('btn_cancel')}</button>
+              <button className="btn btn-primary" style={{flex:2}} onClick={addItem}>{t('btn_add')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ─── Barcode Fetch ────────────────────────────────────────────────
+async function fetchProductByBarcode(barcode) {
+  try {
+    const res=await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+    const data=await res.json();
+    if(data.status===1&&data.product){
+      const p=data.product,n=p.nutriments||{};
+      const kcalRaw=n['energy-kcal_100g']||(n['energy_100g']?Math.round(n['energy_100g']/4.184):0);
+      return{name:p.product_name_ru||p.product_name||'',kcal100:kcalRaw?String(Math.round(kcalRaw)):'',protein100:n.proteins_100g!=null?String(Math.round(n.proteins_100g*10)/10):'',fat100:n.fat_100g!=null?String(Math.round(n.fat_100g*10)/10):'',carbs100:n.carbohydrates_100g!=null?String(Math.round(n.carbohydrates_100g*10)/10):''};
+    }
+    return null;
+  }catch{return null;}
+}
+
+// ─── Screen 4: Nutrition ─────────────────────────────────────────
+const EMPTY_FORM={name:'',portionG:'',kcal100:'',protein100:'',fat100:'',carbs100:'',kcal:'',protein:'',fat:'',carbs:''};
+function calcFromPer100(f){const g=parseFloat(f.portionG);if(!g||g<=0)return f;const c=v=>v!==''?String(Math.round(parseFloat(v)*g/100*10)/10):'';return{...f,kcal:f.kcal100!==''?String(Math.round(parseFloat(f.kcal100)*g/100)):f.kcal,protein:f.protein100!==''?c(f.protein100):f.protein,fat:f.fat100!==''?c(f.fat100):f.fat,carbs:f.carbs100!==''?c(f.carbs100):f.carbs};}
+
+function NutritionScreen({ state, update, showToast, onXP }) {
+  const t = useT();
+  const { nutrition, activity } = state;
+  const [showAdd,setShowAdd]=useState(false);
+  const [showScanner,setShowScanner]=useState(false);
+  const [fetching,setFetching]=useState(false);
+  const [form,setForm]=useState(EMPTY_FORM);
+  const profile=getProfile();
+  const waterGoal=(parseFloat(profile.goalWaterL)||3)*1000;
+  const setField=(key,val)=>setForm(prev=>{const u={...prev,[key]:val};if(['portionG','kcal100','protein100','fat100','carbs100'].includes(key))return calcFromPer100(u);return u;});
+  const totals=nutrition.meals.reduce((acc,m)=>({kcal:acc.kcal+(+m.kcal||0),protein:acc.protein+(+m.protein||0),fat:acc.fat+(+m.fat||0),carbs:acc.carbs+(+m.carbs||0)}),{kcal:0,protein:0,fat:0,carbs:0});
+  const balance=totals.kcal-(+activity.activeKcal||0);
+  const waterPct=Math.min(nutrition.waterMl/waterGoal*100,100);
+  const addMeal=()=>{if(!form.name)return;const f=calcFromPer100(form);update('nutrition',{...nutrition,meals:[...nutrition.meals,{id:Date.now(),name:f.name,kcal:f.kcal,protein:f.protein,fat:f.fat,carbs:f.carbs,portionG:f.portionG}]});setForm(EMPTY_FORM);setShowAdd(false);onXP&&onXP(30);};
+  const removeMeal=id=>update('nutrition',{...nutrition,meals:nutrition.meals.filter(m=>m.id!==id)});
+  const addWater=()=>{update('nutrition',{...nutrition,waterMl:Math.min(nutrition.waterMl+250,waterGoal)});onXP&&onXP(10);};
+  const handleBarcode=async(code)=>{setShowScanner(false);setShowAdd(true);setFetching(true);showToast(t('searching'));const product=await fetchProductByBarcode(code);setFetching(false);if(product){setForm(prev=>calcFromPer100({...prev,...product}));showToast(t('product_found'));}else showToast(t('product_not_found'));};
+  const closeAdd=()=>{setShowAdd(false);setForm(EMPTY_FORM);};
+  return (
+    <div className="screen-content fade-up">
+      <div className="section-title">{t('nutrition_title')}</div>
+      <div className="card" style={{display:'flex',alignItems:'center',gap:16}}>
+        <CircleProgress value={nutrition.waterMl} max={waterGoal} color="var(--cyan)" size={88} stroke={9} label={`${(nutrition.waterMl/1000).toFixed(1)}л`} sublabel={`из ${(waterGoal/1000).toFixed(0)}л`}/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>{t('hydration')}</div>
+          <div className="progress-bar-bg" style={{marginBottom:12}}><div className="progress-bar-fill" style={{width:`${waterPct}%`,background:'linear-gradient(90deg,var(--cyan),var(--teal))'}}/></div>
+          <button className="btn btn-primary btn-full" style={{fontSize:14}} onClick={addWater}>{t('add_water')}</button>
+        </div>
+      </div>
+      <div className="card" style={{background:balance<0?'rgba(168,255,62,.06)':balance===0?'rgba(0,229,255,.06)':'rgba(255,45,120,.06)'}}>
+        <div className="label">{t('kcal_balance')}</div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8}}>
+          <div><div style={{fontSize:12,color:'var(--text3)'}}>{t('consumed')}</div><div style={{fontSize:20,fontWeight:700}}>{totals.kcal} кк</div></div>
+          <div style={{fontSize:22,color:'var(--text3)'}}>−</div>
+          <div><div style={{fontSize:12,color:'var(--text3)'}}>{t('burned')}</div><div style={{fontSize:20,fontWeight:700}}>{activity.activeKcal||0} кк</div></div>
+          <div style={{fontSize:22,color:'var(--text3)'}}>＝</div>
+          <div style={{textAlign:'right'}}><div style={{fontSize:12,color:'var(--text3)'}}>{t('balance')}</div><div style={{fontSize:22,fontWeight:800,color:balance<0?'var(--lime)':balance===0?'var(--cyan)':'var(--pink)'}}>{balance>0?'+':''}{balance}</div></div>
+        </div>
+        <div style={{marginTop:8,fontSize:12,color:'var(--text3)'}}>{balance<-200?t('cal_deficit'):balance>200?t('cal_surplus'):t('cal_balanced')}</div>
+      </div>
+      <div className="grid-3">
+        {[{label:t('proteins'),val:totals.protein,color:'var(--pink)'},{label:t('fats'),val:totals.fat,color:'var(--orange)'},{label:t('carbs'),val:totals.carbs,color:'var(--lime)'}].map(m=>(
+          <div key={m.label} className="stat-card" style={{padding:'12px 10px'}}><div style={{fontSize:18,fontWeight:800,color:m.color}}>{m.val}<span style={{fontSize:12,fontWeight:500}}>г</span></div><div style={{fontSize:11,color:'var(--text3)'}}>{m.label}</div></div>
+        ))}
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{fontSize:17,fontWeight:700}}>{t('meals_title')}</div>
+        <button className="btn btn-sm btn-primary" onClick={()=>setShowAdd(true)}>{t('btn_add')}</button>
+      </div>
+      {nutrition.meals.length===0
+        ?<div className="card" style={{textAlign:'center',color:'var(--text3)',padding:'28px 16px'}}><div style={{fontSize:36,marginBottom:8}}>🍽</div><div style={{fontSize:15}}>{t('no_meals')}</div></div>
+        :<div className="card">{nutrition.meals.map(m=>(
+          <div key={m.id} className="meal-row">
+            <div style={{flex:1}}><div style={{fontSize:15,fontWeight:600}}>{m.name}{m.portionG&&<span style={{fontSize:12,color:'var(--text3)',fontWeight:400}}> · {m.portionG}г</span>}</div>
+              <div style={{display:'flex',gap:4,marginTop:4,flexWrap:'wrap'}}>
+                {m.kcal&&<div className="macro-chip">🔥 {m.kcal} кк</div>}
+                {m.protein&&<div className="macro-chip" style={{color:'var(--pink)'}}>Б:{m.protein}г</div>}
+                {m.fat&&<div className="macro-chip" style={{color:'var(--orange)'}}>Ж:{m.fat}г</div>}
+                {m.carbs&&<div className="macro-chip" style={{color:'var(--lime)'}}>У:{m.carbs}г</div>}
+              </div>
+            </div>
+            <button onClick={()=>removeMeal(m.id)} style={{background:'none',border:'none',color:'var(--text3)',fontSize:18,cursor:'pointer',padding:'0 4px'}}>✕</button>
+          </div>
+        ))}</div>
+      }
+      {showAdd&&(
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&closeAdd()}>
+          <div className="modal-sheet">
+            <div className="modal-handle"/>
+            <div style={{fontSize:18,fontWeight:700,marginBottom:16}}>{t('meal_add_title')}</div>
+            <button className="scan-btn" style={{marginBottom:16}} disabled={fetching} onClick={()=>{setShowAdd(false);setShowScanner(true);}}>
+              {fetching?<span className="spinner"/>:<span>📷</span>}
+              {fetching?t('scanning'):t('scan_barcode')}
+            </button>
+            <div style={{marginBottom:14}}><div className="label">{t('meal_name')}</div><input className="input" placeholder="Завтрак, Протеин..." value={form.name} onChange={e=>setField('name',e.target.value)}/></div>
+            <div className="per100-section">
+              <div style={{fontSize:13,fontWeight:700,color:'var(--lime)',marginBottom:12}}>🧮 {t('autocalc')}</div>
+              <div style={{marginBottom:10}}><div className="label">{t('portion_g')}</div><input type="number" className="input" placeholder="150" value={form.portionG} onChange={e=>setField('portionG',e.target.value)}/></div>
+              <div className="grid-2" style={{gap:8}}>
+                {[{key:'kcal100',label:t('kcal')+'/100г'},{key:'protein100',label:t('proteins')+'/100г'},{key:'fat100',label:t('fats')+'/100г'},{key:'carbs100',label:t('carbs')+'/100г'}].map(f=>(
+                  <div key={f.key}><div className="label">{f.label}</div><input type="number" className="input" style={{fontSize:14}} placeholder="0" value={form[f.key]} onChange={e=>setField(f.key,e.target.value)}/></div>
+                ))}
+              </div>
+            </div>
+            <div style={{fontSize:12,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.4px',marginBottom:8}}>{t('total_values')}</div>
+            <div className="grid-2" style={{gap:8,marginBottom:16}}>
+              {[{key:'kcal',label:t('kcal')},{key:'protein',label:t('proteins')+' (г)'},{key:'fat',label:t('fats')+' (г)'},{key:'carbs',label:t('carbs')+' (г)'}].map(f=>(
+                <div key={f.key}><div className="label">{f.label}</div><input type="number" className="input" style={{fontSize:14}} placeholder="0" value={form[f.key]} onChange={e=>setField(f.key,e.target.value)}/></div>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button className="btn btn-secondary" style={{flex:1}} onClick={closeAdd}>{t('btn_cancel')}</button>
+              <button className="btn btn-primary" style={{flex:2}} onClick={addMeal}>{t('btn_add')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showScanner&&<BarcodeScanner onResult={handleBarcode} onClose={()=>{setShowScanner(false);setShowAdd(true);}}/>}
+    </div>
+  );
+}
+
+// ─── Screen 5: Workout ───────────────────────────────────────────
+function WorkoutScreen({ state, update, logs, onXP }) {
+  const t = useT();
+  const { workout } = state;
+  const [inlineInput, setInlineInput] = useState('');
+  const [showInline,  setShowInline]  = useState(false);
+  const [showSugg,    setShowSugg]    = useState(false);
+  // Derive exercise history directly from live logs prop — always up-to-date
+  const history = useMemo(() => {
+    const names = new Set();
+    Object.values(logs || {}).forEach(day => {
+      if (day?.workout?.exercises) {
+        day.workout.exercises.forEach(ex => { if (ex.name) names.add(ex.name.trim()); });
+      }
+    });
+    return Array.from(names).sort((a, b) => a.localeCompare(b, 'ru'));
+  }, [logs]);
+  const filteredSugg = useMemo(() => {
+    const q = inlineInput.trim().toLowerCase();
+    const pool = q ? history.filter(n => n.toLowerCase().includes(q)) : history;
+    return pool.slice(0, 5);
+  }, [history, inlineInput]);
+  const updateCardio=(field,val)=>update('workout',{...workout,cardio:{...workout.cardio,[field]:val}});
+  const addExercise=(name)=>{const n=(name||inlineInput).trim();if(!n)return;update('workout',{...workout,exercises:[...workout.exercises,{id:Date.now(),name:n,sets:[]}]});setInlineInput('');setShowInline(false);onXP&&onXP(150);};
+  const addSet=exId=>update('workout',{...workout,exercises:workout.exercises.map(ex=>ex.id===exId?{...ex,sets:[...ex.sets,{id:Date.now(),weight:'',reps:'',dropset:false}]}:ex)});
+  const updateSet=(exId,setId,field,val)=>update('workout',{...workout,exercises:workout.exercises.map(ex=>ex.id===exId?{...ex,sets:ex.sets.map(s=>s.id===setId?{...s,[field]:val}:s)}:ex)});
+  const removeSet=(exId,setId)=>update('workout',{...workout,exercises:workout.exercises.map(ex=>ex.id===exId?{...ex,sets:ex.sets.filter(s=>s.id!==setId)}:ex)});
+  const removeExercise=exId=>update('workout',{...workout,exercises:workout.exercises.filter(ex=>ex.id!==exId)});
+  const CARDIO_FIELDS=[{key:'machine',label:t('machine'),placeholder:'Беговая дорожка...'},{key:'angle',label:t('angle'),placeholder:'5°'},{key:'speed',label:t('speed'),placeholder:'7.5 км/ч'},{key:'duration',label:t('duration'),placeholder:'30',type:'number'},{key:'distance',label:t('distance'),placeholder:'3.5',type:'number'}];
+  return (
+    <div className="screen-content fade-up">
+      <div className="section-title">{t('workout_title')}</div>
+      <div className="card">
+        <div style={{fontSize:16,fontWeight:700,marginBottom:12}}><span style={{background:'rgba(255,45,120,.12)',padding:'4px 10px',borderRadius:8,fontSize:14,color:'var(--pink)'}}>{t('cardio_section')}</span></div>
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {CARDIO_FIELDS.map(f=>(
+            <div key={f.key}><div className="label">{f.label}</div><input className="input" placeholder={f.placeholder} type={f.type||'text'} value={workout.cardio[f.key]} onChange={e=>updateCardio(f.key,e.target.value)}/></div>
+          ))}
+        </div>
+      </div>
+      <div style={{display:'flex',alignItems:'center'}}><span style={{background:'rgba(168,255,62,.12)',padding:'4px 10px',borderRadius:8,fontSize:14,color:'var(--lime)'}}>{t('strength_section')}</span></div>
+      {workout.exercises.length===0&&<div className="card" style={{textAlign:'center',color:'var(--text3)',padding:'28px 16px'}}><div style={{fontSize:36,marginBottom:8}}>🏋️</div><div style={{fontSize:15}}>{t('no_strength')}</div></div>}
+      {workout.exercises.map(ex=>(
+        <div key={ex.id} className="card">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <div style={{fontSize:16,fontWeight:700}}>{ex.name}</div>
+            <div style={{display:'flex',gap:8}}>
+              <button className="btn btn-sm btn-secondary" onClick={()=>addSet(ex.id)}>{t('add_set')}</button>
+              <button onClick={()=>removeExercise(ex.id)} style={{background:'none',border:'none',color:'var(--text3)',fontSize:18,cursor:'pointer'}}>✕</button>
+            </div>
+          </div>
+          {ex.sets.length===0&&<div style={{color:'var(--text3)',fontSize:13,textAlign:'center',padding:'8px 0'}}>{t('no_sets')}</div>}
+          {ex.sets.length>0&&<div style={{display:'grid',gridTemplateColumns:'24px 1fr 1fr auto auto',gap:6,fontSize:11,color:'var(--text3)',fontWeight:700,textTransform:'uppercase',letterSpacing:'.4px',marginBottom:4}}><div>#</div><div>{t('weight_col')}</div><div>{t('reps_col')}</div><div>{t('dropset')}</div><div></div></div>}
+          {ex.sets.map((s,i)=>(
+            <div key={s.id} className="set-row" style={{display:'grid',gridTemplateColumns:'24px 1fr 1fr auto auto',gap:6,alignItems:'center'}}>
+              <div style={{fontSize:12,color:'var(--text3)',fontWeight:700}}>{i+1}</div>
+              <input type="number" className="input" placeholder="0" value={s.weight} onChange={e=>updateSet(ex.id,s.id,'weight',e.target.value)} style={{fontSize:14,padding:'8px 10px'}}/>
+              <input type="number" className="input" placeholder="0" value={s.reps} onChange={e=>updateSet(ex.id,s.id,'reps',e.target.value)} style={{fontSize:14,padding:'8px 10px'}}/>
+              <Toggle checked={s.dropset} onChange={v=>updateSet(ex.id,s.id,'dropset',v)}/>
+              <button onClick={()=>removeSet(ex.id,s.id)} style={{background:'none',border:'none',color:'var(--text3)',fontSize:16,cursor:'pointer'}}>✕</button>
+            </div>
+          ))}
+          {ex.sets.length>0&&<div style={{marginTop:8,fontSize:12,color:'var(--text3)',padding:'6px 0 0',borderTop:'1px solid var(--sep)'}}>{t('volume')}: {ex.sets.reduce((a,s)=>a+(+s.weight||0)*(+s.reps||0),0)} кг·повт</div>}
+        </div>
+      ))}
+      {showInline
+        ? <div className="card" style={{display:'flex',gap:10,alignItems:'center'}}>
+            <div style={{flex:1,position:'relative'}}>
+              <input className="input" placeholder="Жим лёжа, Приседания..."
+                value={inlineInput}
+                onChange={e=>{setInlineInput(e.target.value);setShowSugg(true);}}
+                autoFocus
+                onFocus={()=>setShowSugg(true)}
+                onBlur={()=>setTimeout(()=>setShowSugg(false),150)}
+                onKeyDown={e=>{
+                  if(e.key==='Enter'){addExercise(inlineInput);setShowSugg(false);}
+                  if(e.key==='Escape'){setShowSugg(false);setInlineInput('');}
+                }}
+              />
+              {showSugg && filteredSugg.length > 0 && (
+                <div className="exercise-suggestions">
+                  {history.length > 0 && (
+                    <div className="ex-sug-label" style={{display:'flex',alignItems:'center',gap:5}}>
+                      {inlineInput.trim()
+                        ? <><IcSearch size={11} color="var(--text3)"/><span>Совпадения</span></>
+                        : <><IcClock  size={11} color="var(--text3)"/><span>История упражнений</span></>
+                      }
+                    </div>
+                  )}
+                  {filteredSugg.map(name => {
+                    const q = inlineInput.trim().toLowerCase();
+                    const idx = q ? name.toLowerCase().indexOf(q) : -1;
+                    return (
+                      <div key={name} className="ex-sug-item"
+                        onMouseDown={e=>{e.preventDefault();addExercise(name);setShowSugg(false);}}>
+                        <IcDumbbell size={15} color="var(--text3)" style={{flexShrink:0}}/>
+                        <span>{idx >= 0 && q
+                          ? <>{name.slice(0,idx)}<mark>{name.slice(idx,idx+q.length)}</mark>{name.slice(idx+q.length)}</>
+                          : name
+                        }</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={()=>{addExercise(inlineInput);setShowSugg(false);}}>+</button>
+            <button className="btn btn-secondary btn-sm" onClick={()=>{setShowInline(false);setInlineInput('');setShowSugg(false);}}>✕</button>
+          </div>
+        : <button className="btn btn-secondary btn-full" onClick={()=>setShowInline(true)} style={{marginTop:4}}>{t('add_exercise')}</button>
+      }
+    </div>
+  );
+}
+
+// ─── Screen 6: Recovery ──────────────────────────────────────────
+// recoveryTemplates is now passed as a prop from App (via profileSnap) — no polling needed
+function RecoveryScreen({ state, update, recoveryTemplates: propTemplates }) {
+  const t = useT();
+  const templates = (propTemplates && propTemplates.length > 0)
+    ? propTemplates
+    : [{id:'sauna',name:'Сауна',emoji:'🔥'},{id:'massage',name:'Массаж',emoji:'💆'},{id:'pressotherapy',name:'Прессотерапия',emoji:'🦵'}];
+  const recoveryItems = state.recoveryItems || {};
+  const recovery = state.recovery || { notes: '' };
+  const doneCount = templates.filter(tmpl => recoveryItems[tmpl.id]).length;
+  return (
+    <div className="screen-content fade-up">
+      <div className="section-title">{t('recovery_title')}</div>
+      {templates.length === 0 ? (
+        <div className="card" style={{textAlign:'center',color:'var(--text3)',padding:'32px 16px'}}>
+          <div style={{fontSize:36,marginBottom:8}}>🔄</div>
+          <div style={{fontSize:15}}>{t('recovery_no_templates')}</div>
+        </div>
+      ) : (
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {templates.map(tmpl => {
+            const done = !!recoveryItems[tmpl.id];
+            return (
+              <div key={tmpl.id} className="recovery-card">
+                <div style={{display:'flex',alignItems:'center',gap:12}}>
+                  <div style={{width:44,height:44,borderRadius:12,background:done?'rgba(0,229,255,.22)':'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,transition:'background .2s'}}>{tmpl.emoji}</div>
+                  <div>
+                    <div style={{fontSize:16,fontWeight:600,color:done?'var(--cyan)':'var(--text)'}}>{tmpl.name}</div>
+                    <div style={{fontSize:12,color:'var(--text3)'}}>{done?t('done'):t('not_done')}</div>
+                  </div>
+                </div>
+                <Toggle checked={done} onChange={()=>update('recoveryItems',{...recoveryItems,[tmpl.id]:!done})}/>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div className="card">
+        <div className="label">{t('day_notes')}</div>
+        <textarea className="input" placeholder="Самочувствие, события дня..." value={recovery.notes} onChange={e=>update('recovery',{...recovery,notes:e.target.value})}/>
+        {recovery.notes&&<div style={{fontSize:12,color:'var(--text3)',marginTop:4,textAlign:'right'}}>{recovery.notes.length} символов</div>}
+      </div>
+      {templates.length > 0 && (
+        <div className="card" style={{background:'linear-gradient(135deg,rgba(191,90,242,.08),rgba(0,229,255,.08))'}}>
+          <div className="label">{t('recovery_summary')}</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:8}}>
+            {templates.map(tmpl=>(
+              <div key={tmpl.id} className="pill" style={{background:recoveryItems[tmpl.id]?'rgba(0,229,255,.1)':'var(--surface2)',color:recoveryItems[tmpl.id]?'var(--cyan)':'var(--text3)'}}>{tmpl.emoji} {tmpl.name}</div>
+            ))}
+          </div>
+          <div style={{marginTop:8,fontSize:12,color:'var(--text3)'}}>{doneCount}/{templates.length} выполнено</div>
+        </div>
+      )}
+      <div className="card" style={{background:'rgba(168,255,62,.04)',border:'1px dashed rgba(168,255,62,.2)'}}>
+        <div style={{fontSize:12,color:'var(--text3)',textAlign:'center',lineHeight:1.6}}>
+          💡 Управляй ритуалами в
+          <span style={{color:'var(--lime)',fontWeight:600}}> Профиле → Мои ритуалы</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Screen 7: Habits ────────────────────────────────────────────
+function HabitsScreen({ habits, setHabits, showToast }) {
+  const t = useT();
+  const [relapseTarget, setRelapseTarget] = useState(null);
+  const [pendingActivation, setPendingActivation] = useState(null);
+  const [pendingOffset, setPendingOffset] = useState('0');
+  const getH = k => ({ active:false, startDate:null, streakDays:0, offset:0, ...(habits[k]||{}) });
+  const HABITS_CONFIG = [
+    { key:'noSmoking', label:t('no_smoking'), emoji:'🚭', color:'var(--lime)',
+      milestones:[{days:7,label:'1 нед.'},{days:21,label:'21 дн.'},{days:50,label:'50 дн.'},{days:100,label:'100 дн.'},{days:365,label:'1 год'}],
+      counterLabel:t('smoke_days') },
+    { key:'noAlcohol', label:t('no_alcohol'), emoji:'🍷', color:'var(--cyan)',
+      milestones:[{days:7,label:'1 нед.'},{days:30,label:'1 мес.'},{days:100,label:'100 дн.'},{days:365,label:'1 год'}],
+      counterLabel:t('alcohol_days') },
+    { key:'noSugar',   label:t('no_sugar'),   emoji:'🍬', color:'var(--orange)',
+      milestones:[{days:7,label:'1 нед.'},{days:30,label:'1 мес.'},{days:100,label:'100 дн.'}],
+      counterLabel:t('sugar_days') },
+    { key:'noCoffee',  label:t('no_coffee'),  emoji:'☕', color:'var(--purple)',
+      milestones:[{days:7,label:'1 нед.'},{days:30,label:'1 мес.'},{days:100,label:'100 дн.'}],
+      counterLabel:t('coffee_days') },
+  ];
+  const handleToggle = (key, val) => {
+    if (!val) { setRelapseTarget(key); }
+    else { setPendingActivation(key); setPendingOffset('0'); }
+  };
+  const confirmActivation = (key) => {
+    const offset = Math.max(0, parseInt(pendingOffset,10)||0);
+    const u = {...habits,[key]:{active:true,startDate:TODAY,streakDays:0,offset}};
+    setHabits(u); saveHabits(u); setPendingActivation(null);
+    showToast('💪 Отсчёт начат!');
+  };
+  const confirmRelapse = () => {
+    const u = {...habits,[relapseTarget]:{active:false,startDate:null,streakDays:0,offset:0}};
+    setHabits(u); saveHabits(u); setRelapseTarget(null);
+    showToast('😔 '+t('confirm_relapse'));
+  };
+  const relapseConfig = HABITS_CONFIG.find(h=>h.key===relapseTarget);
+  return (
+    <div className="screen-content fade-up">
+      <div className="section-title">{t('habits_title')}</div>
+      {HABITS_CONFIG.map(h => {
+        const habit = getH(h.key);
+        const total = totalHabitDays(habit);
+        const isPending = pendingActivation === h.key;
+        return (
+          <div key={h.key} className="card">
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingBottom:14,marginBottom:14,borderBottom:'1px solid var(--sep)'}}>
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                <div style={{width:50,height:50,borderRadius:14,flexShrink:0,background:habit.active?`${h.color}22`:'var(--surface2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,transition:'background .3s'}}>{h.emoji}</div>
+                <div>
+                  <div style={{fontSize:17,fontWeight:700}}>{h.label}</div>
+                  <div style={{fontSize:12,color:habit.active?h.color:'var(--text3)',fontWeight:600,marginTop:1}}>{habit.active?t('tracking_active'):t('tracking_inactive')}</div>
+                </div>
+              </div>
+              <Toggle checked={habit.active} onChange={v=>handleToggle(h.key,v)}/>
+            </div>
+            {isPending && (
+              <div style={{background:'var(--surface2)',borderRadius:12,padding:14,marginBottom:14}}>
+                <div style={{fontSize:13,fontWeight:600,color:'var(--text2)',marginBottom:10}}>{t('habit_offset_label')} ({t('habit_offset_unit')}):</div>
+                <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                  <input type="number" min="0" className="input habit-offset-input"
+                    value={pendingOffset} onChange={e=>setPendingOffset(e.target.value)}/>
+                  <span style={{fontSize:13,color:'var(--text3)',fontWeight:500,flex:1}}>{t('habit_offset_unit')}</span>
+                  <button className="btn btn-primary btn-sm" style={{flex:2}} onClick={()=>confirmActivation(h.key)}>Начать ✓</button>
+                </div>
+              </div>
+            )}
+            <div style={{textAlign:'center',padding:'6px 0 18px'}}>
+              <div className="streak-display" style={{color:habit.active&&total>0?h.color:'var(--text3)'}}>{total}</div>
+              <div style={{fontSize:14,color:'var(--text3)',marginTop:4,fontWeight:500}}>{h.counterLabel}</div>
+              {habit.active&&total===0&&<div style={{fontSize:12,color:'var(--text3)',marginTop:6}}>{t('first_day')}</div>}
+              {(parseInt(habit.offset,10)||0)>0&&<div style={{fontSize:11,color:h.color,marginTop:3}}>+{habit.offset} дн. зачтено</div>}
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {h.milestones.map((ms,i)=>{
+                const prevDays=i===0?0:h.milestones[i-1].days;
+                const progress=Math.min(Math.max((total-prevDays)/(ms.days-prevDays),0),1);
+                const reached=total>=ms.days;
+                return(
+                  <div key={ms.days}>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                      <span style={{fontSize:11,fontWeight:700,color:reached?h.color:'var(--text3)'}}>{reached?'✅':'○'} {ms.label} ({ms.days} дн.)</span>
+                      <span style={{fontSize:11,color:'var(--text3)'}}>{reached?'✓':`${total}/${ms.days}`}</span>
+                    </div>
+                    <div className="progress-bar-bg" style={{height:5}}><div className="progress-bar-fill" style={{width:`${progress*100}%`,background:reached?h.color:`${h.color}66`}}/></div>
+                  </div>
+                );
+              })}
+            </div>
+            {habit.active&&total>0&&(()=>{
+              const nextMs=h.milestones.find(ms=>total<ms.days);
+              return nextMs?(
+                <div style={{marginTop:12,padding:'10px 12px',borderRadius:12,background:`${h.color}11`,fontSize:12,fontWeight:600,color:h.color,textAlign:'center'}}>
+                  {t('days_left')} «{nextMs.label}» осталось {nextMs.days-total} дн. {t('hold_on')}
+                </div>
+              ):(
+                <div style={{marginTop:12,padding:'10px 12px',borderRadius:12,background:`${h.color}22`,fontSize:12,fontWeight:700,color:h.color,textAlign:'center'}}>{t('all_milestones')}</div>
+              );
+            })()}
+          </div>
+        );
+      })}
+      <div className="card" style={{background:'linear-gradient(135deg,rgba(168,255,62,.06),rgba(0,229,255,.05))'}}>
+        <div style={{fontSize:15,fontWeight:700,marginBottom:8}}>{t('habit_tip_title')}</div>
+        <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.7}}>{t('habit_tip')}</div>
+      </div>
+      {relapseTarget&&(
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setRelapseTarget(null)}>
+          <div className="modal-sheet">
+            <div className="modal-handle"/>
+            <div style={{textAlign:'center',marginBottom:24}}>
+              <div style={{fontSize:56,marginBottom:14,lineHeight:1}}>😔</div>
+              <div style={{fontSize:21,fontWeight:800,marginBottom:10,letterSpacing:'-.5px'}}>{t('reset_title')}</div>
+              <div style={{fontSize:14,color:'var(--text2)',lineHeight:1.65}}>
+                Текущая серия: <strong style={{color:relapseConfig?.color||'var(--cyan)',fontSize:16}}>{totalHabitDays(getH(relapseTarget))} дн.</strong>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button className="btn btn-secondary" style={{flex:1}} onClick={()=>setRelapseTarget(null)}>{t('btn_cancel')}</button>
+              <button className="btn btn-danger" style={{flex:1}} onClick={confirmRelapse}>{t('confirm_relapse')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Achievements Board ──────────────────────────────────────────────────────
+function AchievementsBoard({ habits, logs, showToast }) {
+  const t = useT();
+  const [newlyUnlocked, setNewlyUnlocked] = useState({});
+  const unlocked = useMemo(() => computeUnlocked(habits, logs), [habits, logs]);
+  useEffect(() => {
+    const saved=getAchievements(), newOnes={};
+    Object.entries(unlocked).forEach(([id,isU])=>{if(isU&&!saved[id])newOnes[id]=true;});
+    if(Object.keys(newOnes).length>0){
+      const updated={...saved};Object.keys(newOnes).forEach(id=>{updated[id]=new Date().toISOString();});
+      saveAchievements(updated);setNewlyUnlocked(newOnes);
+      const badge=BADGE_DEFS.find(b=>newOnes[b.id]);
+      if(badge)showToast(t('achievement_toast')+t(badge.name_key));
+    }
+  },[unlocked]);
+  const unlockedCount = Object.values(unlocked).filter(Boolean).length;
+  const CATEGORIES = [
+    { id:'habits',      label:t('ach_section_habits'),      icon:'🧠' },
+    { id:'fitness',     label:t('ach_section_fitness'),     icon:'💪' },
+    { id:'consistency', label:t('ach_section_consistency'), icon:'🎯' },
+  ];
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+        <div style={{fontSize:17,fontWeight:700}}>🏆 Доска достижений</div>
+        <div className="pill" style={{background:unlockedCount>0?'rgba(168,255,62,.15)':'var(--surface2)',color:unlockedCount>0?'var(--lime)':'var(--text3)'}}>{unlockedCount}/{BADGE_DEFS.length}</div>
+      </div>
+      {CATEGORIES.map(cat => {
+        const catBadges = BADGE_DEFS.filter(b=>b.cat===cat.id);
+        const catUnlocked = catBadges.filter(b=>unlocked[b.id]).length;
+        return (
+          <div key={cat.id} className="ach-category">
+            <div className="ach-cat-title">
+              <span>{cat.icon}</span>
+              <span>{cat.label}</span>
+              <span style={{marginLeft:'auto',fontSize:11,fontWeight:600,color:'var(--text3)'}}>{catUnlocked}/{catBadges.length}</span>
+            </div>
+            <div className="ach-grid">
+              {catBadges.map(b => {
+                const isU=unlocked[b.id], justU=!!newlyUnlocked[b.id];
+                return (
+                  <div key={b.id}
+                    className={`ach-card${isU?' unlocked':' locked'}${justU?' just-unlocked':''}`}
+                    style={isU?{borderColor:`${b.color}55`}:undefined}>
+                    <div className="ach-emoji">{b.emoji}</div>
+                    <div className="ach-name">{t(b.name_key)}</div>
+                    <div className="ach-desc">{t(b.desc_key)}</div>
+                    {isU&&<div className="ach-tag" style={{color:b.color}}>✓</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+// ─── Screen 8: Stats ─────────────────────────────────────────────
+function StatsScreen({ logs, habits, showToast, xp = 0 }) {
+  const t = useT();
+  const weekCount=useMemo(()=>countWorkoutsThisWeek(logs),[logs]);
+  const monthCount=useMemo(()=>countWorkoutsThisMonth(logs),[logs]);
+  const totalCount=useMemo(()=>countWorkoutDays(logs),[logs]);
+  const getH=k=>({active:false,startDate:null,streakDays:0,offset:0,...(habits[k]||{})});
+  const smokeDays=totalHabitDays(getH('noSmoking'));
+  const alcoholDays=totalHabitDays(getH('noAlcohol'));
+  const sugarDays=totalHabitDays(getH('noSugar'));
+  const coffeeDays=totalHabitDays(getH('noCoffee'));
+  const weightData=useMemo(()=>{const a=[];for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const iso=isoDate(d);const wv=logs[iso]&&logs[iso].weight?parseFloat(logs[iso].weight):null;a.push({iso,w:wv,day:d.getDate()});}return a;},[logs]);
+  const validW=weightData.filter(p=>p.w!==null);
+  const minW=validW.length?Math.min(...validW.map(p=>p.w))-.5:60;
+  const maxW=validW.length?Math.max(...validW.map(p=>p.w))+.5:80;
+  const range=maxW-minW||1;
+  const SVG_W=300,SVG_H=60;
+  const plotPoints=weightData.map((p,i)=>({...p,x:(i/13)*SVG_W,y:p.w!==null?SVG_H-((p.w-minW)/range)*(SVG_H-12)-6:null}));
+  const linePoints=plotPoints.filter(p=>p.y!==null);
+  const polyline=linePoints.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  // XP derived values
+  const { level, xpInLevel, xpForNext } = computeXPLevel(xp);
+  const rank = getCyberRank(level);
+  const xpPct = Math.min(xpInLevel / xpForNext * 100, 100).toFixed(1);
+  return(
+    <div className="screen-content fade-up">
+      {/* Cyber Stats Card */}
+      <div className="section-title" style={{marginBottom:0}}>Кибер-Статистика</div>
+      <div className="cyber-stats-card">
+        <div className="cyber-rank-title">⚡ Ранг: {rank}</div>
+        <div className="cyber-stat-row">
+          <span style={{fontSize:13,color:'var(--text3)'}}>Уровень</span>
+          <span style={{fontSize:18,fontWeight:800,color:'var(--cyan)',letterSpacing:'-1px'}}>УР {level}</span>
+        </div>
+        <div className="cyber-stat-row">
+          <span style={{fontSize:13,color:'var(--text3)'}}>Всего опыта</span>
+          <span style={{fontSize:15,fontWeight:700,color:'var(--lime)'}}>{xp.toLocaleString('ru-RU')} ОП</span>
+        </div>
+        <div className="cyber-stat-row" style={{flexDirection:'column',alignItems:'stretch',gap:8}}>
+          <div style={{display:'flex',justifyContent:'space-between'}}>
+            <span style={{fontSize:13,color:'var(--text3)'}}>Прогресс до ур. {level + 1}</span>
+            <span style={{fontSize:13,fontWeight:600,color:'var(--cyan)'}}>{xpInLevel}/{xpForNext}</span>
+          </div>
+          <div className="xp-next-bar-track">
+            <div className="xp-next-bar-fill" style={{width:`${xpPct}%`}}/>
+          </div>
+        </div>
+        <div style={{marginTop:12,paddingTop:10,borderTop:'1px solid var(--sep)',display:'flex',gap:8,flexWrap:'wrap'}}>
+          {[{label:'💧 +10 ОП',hint:'За добавление воды'},{label:'🍽 +30 ОП',hint:'За приём пищи'},{label:'💪 +150 ОП',hint:'За упражнение'},{label:'🎯 +100 ОП',hint:'За закрытие кольца'}].map(r=>(
+            <div key={r.label} style={{background:'var(--surface2)',borderRadius:8,padding:'4px 8px'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--lime)'}}>{r.label}</div>
+              <div style={{fontSize:9,color:'var(--text3)',marginTop:1}}>{r.hint}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="section-title">{t('stats_title')}</div>
+      <div className="grid-2">
+        <div className="stat-card">
+          <div style={{fontSize:22,marginBottom:4}}>📅</div>
+          <div className="stat-val" style={{color:'var(--cyan)'}}>{weekCount}</div>
+          <div className="stat-unit">{t('workouts_week')}</div>
+          <div style={{marginTop:10}}>
+            <div className="progress-bar-bg" style={{height:5}}><div className="progress-bar-fill" style={{width:`${Math.min(weekCount/4*100,100)}%`,background:'linear-gradient(90deg,var(--cyan),var(--lime))'}}/></div>
+            <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>{weekCount>=4?t('goal_reached_week'):t('goal_week')}</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div style={{fontSize:22,marginBottom:4}}>🗓</div>
+          <div className="stat-val" style={{color:'var(--purple)'}}>{monthCount}</div>
+          <div className="stat-unit">{t('workouts_month')}</div>
+          <div style={{marginTop:10}}>
+            <div className="progress-bar-bg" style={{height:5}}><div className="progress-bar-fill" style={{width:`${Math.min(monthCount/20*100,100)}%`,background:'linear-gradient(90deg,var(--purple),var(--pink))'}}/></div>
+            <div style={{fontSize:10,color:'var(--text3)',marginTop:3}}>{monthCount>=20?t('goal_reached_month'):t('goal_month')}</div>
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{background:'linear-gradient(135deg,rgba(168,255,62,.06),rgba(0,229,255,.05))'}}>
+        <div className="label" style={{marginBottom:12}}>{t('overall_stats')}</div>
+        <div style={{display:'flex',justifyContent:'space-around',gap:12}}>
+          <div style={{textAlign:'center',flex:1}}><div style={{fontSize:30,fontWeight:900,color:'var(--lime)',letterSpacing:'-1px'}}>{totalCount}</div><div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{t('total_workouts')}</div></div>
+          <div style={{width:1,background:'var(--sep)'}}/>
+          <div style={{textAlign:'center',flex:1}}><div style={{fontSize:30,fontWeight:900,color:'var(--lime)',letterSpacing:'-1px'}}>{smokeDays}</div><div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{t('smoke_days')}</div></div>
+          <div style={{width:1,background:'var(--sep)'}}/>
+          <div style={{textAlign:'center',flex:1}}><div style={{fontSize:30,fontWeight:900,color:'var(--cyan)',letterSpacing:'-1px'}}>{alcoholDays}</div><div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{t('alcohol_days')}</div></div>
+          </div>
+          <div style={{display:'flex',gap:16,justifyContent:'center',marginTop:12}}>
+            <div style={{textAlign:'center',flex:1}}><div style={{fontSize:30,fontWeight:900,color:'var(--orange)',letterSpacing:'-1px'}}>{sugarDays}</div><div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{t('sugar_days')}</div></div>
+            <div style={{textAlign:'center',flex:1}}><div style={{fontSize:30,fontWeight:900,color:'var(--purple)',letterSpacing:'-1px'}}>{coffeeDays}</div><div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{t('coffee_days')}</div></div>
+        </div>
+      </div>
+      {validW.length>=2&&(
+        <div className="card">
+          <div className="label" style={{marginBottom:12}}>{t('weight_dynamic')}</div>
+          <svg className="sparkline-svg" width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`} preserveAspectRatio="none" style={{height:SVG_H}}>
+            <line x1="0" y1={SVG_H/2} x2={SVG_W} y2={SVG_H/2} stroke="var(--sep)" strokeWidth="1" strokeDasharray="4 4"/>
+            {linePoints.length>1&&<polyline points={[`0,${SVG_H}`,...linePoints.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`),`${SVG_W},${SVG_H}`].join(' ')} fill="rgba(0,229,255,.08)" stroke="none"/>}
+            <polyline points={polyline} fill="none" stroke="var(--cyan)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            {linePoints.map((p,i)=><circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="3.5" fill="var(--cyan)"/>)}
+          </svg>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--text3)',marginTop:6}}>
+            <span>{weightData[0]?new Date(weightData[0].iso+'T12:00:00').toLocaleDateString('ru-RU',{day:'numeric',month:'short'}):''}</span>
+            <span style={{color:'var(--cyan)',fontWeight:700}}>{validW[validW.length-1]?.w?.toFixed(1)} кг</span>
+            <span>{weightData[13]?new Date(weightData[13].iso+'T12:00:00').toLocaleDateString('ru-RU',{day:'numeric',month:'short'}):''}</span>
+          </div>
+        </div>
+      )}
+      <AchievementsBoard habits={habits} logs={logs} showToast={showToast}/>
+    </div>
+  );
+}
+
+// ─── Export ───────────────────────────────────────────────────────
+function generateLog(state, profile) {
+  const habits=getHabits();
+  const getH=k=>({active:false,startDate:null,streakDays:0,offset:0,...(habits[k]||{})});
+  const smokeDays=totalHabitDays(getH('noSmoking'));
+  const alcoholDays=totalHabitDays(getH('noAlcohol'));
+  const sugarDays=totalHabitDays(getH('noSugar'));
+  const coffeeDays=totalHabitDays(getH('noCoffee'));
+  const logs=getAllLogs(), totalWorkouts=countWorkoutDays(logs);
+  const d=new Date(state.date+'T12:00:00');
+  const dateStr=d.toLocaleDateString('ru-RU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const stars='★'.repeat(state.sleep.quality)+'☆'.repeat(5-state.sleep.quality);
+  const readiness=Math.min(100,Math.round((state.sleep.quality/5*40)+(state.energy/10*40)+(Math.min(state.sleep.hours,9)/9*20)));
+  const totals=state.nutrition.meals.reduce((acc,m)=>({kcal:acc.kcal+(+m.kcal||0),protein:acc.protein+(+m.protein||0),fat:acc.fat+(+m.fat||0),carbs:acc.carbs+(+m.carbs||0)}),{kcal:0,protein:0,fat:0,carbs:0});
+  const balance=totals.kcal-(+state.activity.activeKcal||0);
+  const suppLines=['morning','day','evening'].map(p=>{const lbl={morning:'Утро',day:'День',evening:'Вечер'}[p];const items=state.supplements[p].map(s=>`    ${s.checked?'[✓]':'[ ]'} ${s.name}${s.dose?' '+s.dose:''}`).join('\n');return`  ${lbl}:\n${items||'    — пусто'}`;}).join('\n');
+  const mealLines=state.nutrition.meals.length?state.nutrition.meals.map((m,i)=>`  ${i+1}. ${m.name}${m.portionG?` (${m.portionG}г)`:''} — ${m.kcal||0} кк | Б:${m.protein||0}г Ж:${m.fat||0}г У:${m.carbs||0}г`).join('\n'):'  — не введено';
+  const c=state.workout.cardio;
+  const cardioLines=Object.values(c).some(v=>v)?`  ${c.machine||'—'} | Угол:${c.angle||'—'} | ${c.speed||'—'}\n  ${c.duration||'—'} мин | ${c.distance||'—'} км`:'  — не выполнялось';
+  const exLines=state.workout.exercises.length?state.workout.exercises.map(ex=>`  ▸ ${ex.name}\n${ex.sets.map((s,i)=>`      Подход ${i+1}: ${s.weight||'?'}кг × ${s.reps||'?'} повт.${s.dropset?' [DROP]':''}`).join('\n')||'      — нет подходов'}`).join('\n'):'  — не выполнялось';
+  return`╔══════════════════════════════════════════════╗\n║           LifeOS — ДНЕВНОЙ ЛОГ              ║\n╚══════════════════════════════════════════════╝\n\n📅 ${dateStr.toUpperCase()}\n👤 ${profile.name||'—'} | ${profile.age||'—'} лет | ${profile.height||'—'} см | Цель: ${profile.goal||'—'}\n🏆 Всего тренировок: ${totalWorkouts}\n\n🧠 ПРИВЫЧКИ\n  🚬 Без курения:  ${habits.noSmoking.active?`${smokeDays} дн. (активно)`:'—'}\n  🍷 Без алкоголя: ${habits.noAlcohol.active?`${alcoholDays} дн. (активно)`:'—'}\n\n🌙 СОН\n  ${state.sleep.hours}ч | ${stars} | ЦНС ${state.energy}/10 | Готовность ${readiness}%\n\n⚡ АКТИВНОСТЬ\n  ${state.activity.activeKcal||'—'} кк активных | ЧСС ${state.activity.avgHR||'—'} | Вес ${state.weight||'—'} кг\n\n💊 БАДЫ\n${suppLines}\n\n🥗 ПИТАНИЕ\n  Вода: ${(state.nutrition.waterMl/1000).toFixed(2)}л\n${mealLines}\n  ИТОГО: ${totals.kcal} кк | Б:${totals.protein}г Ж:${totals.fat}г У:${totals.carbs}г\n  БАЛАНС: ${balance>0?'+':''}${balance} кк\n\n💪 ТРЕНИРОВКА\n  Кардио:\n${cardioLines}\n  Силовая:\n${exLines}\n\n🔄 ВОССТАНОВЛЕНИЕ\n  ${Object.entries(state.recoveryItems||{}).filter(([,v])=>v).map(([k])=>k).join(', ')||'—'}\n  Заметки: ${state.recovery?.notes||'—'}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nLifeOS v2.0 | ${new Date().toLocaleString('ru-RU')}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+}
+
+function useExportLog(state, showToast) {
+  const [exporting, setExporting] = useState(false);
+  const handleExport = useCallback(async () => {
+    if (exporting) return;
+    setExporting(true);
+    const profile = getProfile();
+    const log = generateLog(state, profile);
+    try { await navigator.clipboard.writeText(log); showToast('✅ Лог скопирован!'); }
+    catch { const ta=document.createElement('textarea');ta.value=log;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('✅ Лог скопирован!'); }
+    finally { setTimeout(() => setExporting(false), 1500); }
+  }, [state, showToast, exporting]);
+  return { handleExport, exporting };
+}
+
+// ─── App ──────────────────────────────────────────────────────────
+function App({ userId, initialData, onLogout }) {
+  const [selectedDate, setSelectedDate] = useState(TODAY);
+  const [data,         setData]         = useState(() => initialData.logs[TODAY] || makeEmptyDay(TODAY));
+  const [activeTab,    setActiveTab]    = useState('sleep');
+  const [toast,        setToast]        = useState(null);
+  const [showProfile,  setShowProfile]  = useState(false);
+  const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem(TUTORIAL_KEY));
+  const [profileSnap,  setProfileSnap]  = useState(initialData.profile);
+  const [logs,         setLogs]         = useState(initialData.logs);
+  const [habits,       setHabits]       = useState(initialData.habits);
+  const [settings,     setSettings]     = useState(initialData.settings);
+  const [xp,           setXp]           = useState(initialData.profile.xp || 0);
+  const prevRingsRef = useRef(null);
+
+  const lang = settings.lang || 'ru';
+  const t = useCallback(key => TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS.ru?.[key] ?? key, [lang]);
+
+  const workoutTotal = useMemo(() => countWorkoutDays(logs), [logs]);
+  const status       = useMemo(() => computeStatus(workoutTotal, t), [workoutTotal, t]);
+
+  // ── Stable debounced Supabase writer (created once via useRef) ───
+  const debouncedSave = useRef(
+    debounce(async (uid, col, val) => {
+      try {
+        await window.supabaseClient.from('user_data').update({ [col]: val }).eq('user_id', uid);
+      } catch(e) { console.warn('[DB save]', col, e); }
+    }, 2000)
+  ).current;
+
+  // Tab visibility guard
+  useEffect(() => {
+    const vt = settings.visibleTabs || {};
+    if (vt[activeTab] === false) {
+      const first = ['sleep','activity','supps','nutrition','workout','recovery'].find(id => vt[id] !== false);
+      if (first) setActiveTab(first);
+    }
+  }, [settings.visibleTabs]);
+
+  // Auto-save: update logs state + debounce cloud write
+  useEffect(() => {
+    setLogs(prev => {
+      const updated = {...prev, [selectedDate]: data};
+      setStorage(LOGS_KEY, updated);          // keep localStorage in sync
+      debouncedSave(userId, 'logs', updated); // debounced Supabase write
+      return updated;
+    });
+  }, [data, selectedDate]);
+
+  // Sync habits to cloud whenever they change
+  useEffect(() => {
+    debouncedSave(userId, 'habits', habits);
+  }, [habits]);
+
+  const handleDateChange = useCallback((date) => {
+    setLogs(prev => { const u={...prev,[selectedDate]:data}; setStorage(LOGS_KEY,u); return u; });
+    setSelectedDate(date);
+    setData(getLogForDate(date));
+    setActiveTab('sleep');
+  }, [selectedDate, data]);
+
+  const update    = useCallback((field, value) => setData(prev => ({...prev,[field]:value})), []);
+  const showToast = useCallback((msg) => { setToast(null); setTimeout(() => setToast(msg), 10); }, []);
+
+  const grantXP = useCallback((amount) => {
+    setXp(prev => {
+      const newXp = prev + amount;
+      const { level } = computeXPLevel(newXp);
+      const p = getProfile();
+      const updated = { ...p, xp: newXp, level };
+      setStorage(PROFILE_KEY, updated);
+      debouncedSave(userId, 'profile', updated);
+      return newXp;
+    });
+    // Floating XP animation
+    const el = document.createElement('div');
+    el.className = 'xp-floater';
+    el.textContent = `⚡ +${amount} Опыт`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+  }, []);
+
+  // Ring bonus: +100 XP when any ring transitions from < 100% to 100%
+  useEffect(() => {
+    const goalKcal  = parseFloat(profileSnap.goalKcal)  || 500;
+    const goalWaterL = parseFloat(profileSnap.goalWaterL) || 3;
+    const goalCal   = parseFloat(profileSnap.goalCalories) || 2000;
+    const activeKcal = parseFloat(data.activity.activeKcal) || 0;
+    const waterL     = (data.nutrition.waterMl || 0) / 1000;
+    const totalKcal  = data.nutrition.meals.reduce((s, m) => s + (+m.kcal || 0), 0);
+    const rings = {
+      activity:  goalKcal  > 0 && activeKcal >= goalKcal,
+      nutrition: goalCal   > 0 && totalKcal  >= goalCal,
+      water:     goalWaterL > 0 && waterL    >= goalWaterL,
+    };
+    if (prevRingsRef.current === null) { prevRingsRef.current = rings; return; }
+    if (rings.activity  && !prevRingsRef.current.activity)  grantXP(100);
+    if (rings.nutrition && !prevRingsRef.current.nutrition) grantXP(100);
+    if (rings.water     && !prevRingsRef.current.water)     grantXP(100);
+    prevRingsRef.current = rings;
+  }, [data, profileSnap]);
+  const completeTutorial = useCallback(() => { localStorage.setItem(TUTORIAL_KEY,'1'); setShowTutorial(false); }, []);
+
+  const closeProfile = useCallback(() => {
+    const latest = getProfile();
+    setProfileSnap(latest);
+    setShowProfile(false);
+    debouncedSave(userId, 'profile', latest); // save profile on modal close
+  }, []);
+
+  const handleSettingsChange = useCallback((newSettings) => {
+    setSettings(newSettings);
+    saveSettings(newSettings);                       // localStorage
+    debouncedSave(userId, 'settings', newSettings); // cloud
+  }, []);
+
+  // Memoised per-screen renders — only the active tab re-renders on data change
+  const activeScreen = useMemo(() => {
+    const recoveryTemplates = profileSnap.recoveryTemplates || [];
+    switch(activeTab) {
+      case 'sleep':     return <SleepScreen      state={data} update={update}/>;
+      case 'activity':  return <ActivityScreen   state={data} update={update}/>;
+      case 'supps':     return <SupplementsScreen state={data} update={update}/>;
+      case 'nutrition': return <NutritionScreen  state={data} update={update} showToast={showToast} onXP={grantXP}/>;
+      case 'workout':   return <WorkoutScreen    state={data} update={update} logs={logs}          onXP={grantXP}/>;
+      case 'recovery':  return <RecoveryScreen   state={data} update={update} recoveryTemplates={recoveryTemplates}/>;
+      default:          return null;
+    }
+  }, [activeTab, data, logs, showToast, grantXP, update, profileSnap.recoveryTemplates]);
+
+  const { handleExport, exporting } = useExportLog(data, showToast);
+
+  return (
+    <LangContext.Provider value={t}>
+      <Header selectedDate={selectedDate} onProfileOpen={() => setShowProfile(true)}
+        userName={profileSnap.name} avatarSrc={profileSnap.avatar} status={status}
+        onExport={handleExport} exporting={exporting}/>
+      <DateNav selectedDate={selectedDate} onChange={handleDateChange} logs={logs}/>
+      {activeTab === 'sleep' && <>
+        <FitnessRings dayData={data} profile={profileSnap}/>
+        <XPBar xp={xp}/>
+        <PhotoDiaryCard
+          photoUrl={data.photoUrl}
+          userId={userId}
+          selectedDate={selectedDate}
+          onUpload={(url) => update('photoUrl', url)}
+        />
+      </>}
+      <div className="screen">
+        {activeScreen}
+      </div>
+      <BottomNav active={activeTab} onChange={setActiveTab} visibleTabs={settings.visibleTabs || {}}/>
+      {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+      {showProfile && (
+        <ProfileModal
+          onClose={closeProfile} status={status}
+          habits={habits} setHabits={setHabits} logs={logs}
+          settings={settings} onSettingsChange={handleSettingsChange}
+          onLogout={onLogout} xp={xp}
+        />
+      )}
+      {showTutorial && <TutorialOverlay onComplete={completeTutorial}/>}
+    </LangContext.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AuthGate />);
+</script>
+</body>
+</html>
